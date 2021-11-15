@@ -16,11 +16,11 @@ import java.util.regex.Pattern;
 
 public class IssuesFetcher {
 
-    public List<Issue> fetchAllIssues(String projectPath, String projectId, String token) throws IOException {
+    public List<Issue> fetchAllIssues(String projectPath, String projectId, String token, String projectName) throws IOException {
 
         URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
         HttpURLConnection connection = getConnectionForUrl(url, token);
-        List<Issue> issues = getIssuesForConnection(connection);
+        List<Issue> issues = getIssuesForConnection(connection, projectName);
 
         Pattern pattern = Pattern.compile("<(https://.{50,200}?)>; rel=\"next\"");
         Matcher matcher;
@@ -29,21 +29,21 @@ public class IssuesFetcher {
             System.out.println("fetching on page: " + matcher.group(1));
             url = new URL(matcher.group(1));
             connection = getConnectionForUrl(url, token);
-            issues.addAll(getIssuesForConnection(connection));
+            issues.addAll(getIssuesForConnection(connection, projectName));
         }
 
         return issues;
     }
 
 
-    public void fetchAllUploadsIssues(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath) throws IOException {
+    public void fetchAllUploadsIssues(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException {
         Map<String, String> cookies;
         if ((cookies = signInToGitLab(loginFormUrl, actionUrl, userName, password)) == null) {
             return;
         }
 
         issues.stream().parallel().filter(issue -> issue.getDescription() != null && !issue.getDescription().isEmpty()).forEach(Utils.throwingConsumerWrapper(issue ->
-                fetchFileByDescription(issue.getDescription(), issue.getIid(), projectPath, cookies), IOException.class));
+                fetchFileByDescription(issue.getDescription(), issue.getIid(), projectPath, cookies, projectName), IOException.class));
 
     }
 
@@ -55,7 +55,7 @@ public class IssuesFetcher {
         return connection;
     }
 
-    private List<Issue> getIssuesForConnection(HttpURLConnection connection) throws IOException {
+    private List<Issue> getIssuesForConnection(HttpURLConnection connection, String projectName) throws IOException {
         List<Issue> issues = new ArrayList<>();
         int responseCode = connection.getResponseCode();
 
@@ -73,23 +73,19 @@ public class IssuesFetcher {
             });
             connection.disconnect();
 
-            issues.forEach(issue -> {
-                File file = new File("uploads\\" + issue.getIid() + "\\" + issue.getIid() + ".json");
+            issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
+                File file = new File(projectName + "\\" + issue.getIid() + "\\" + issue.getIid() + ".json");
                 file.getParentFile().mkdirs();
-                try {
-                    if (!file.exists()) {
-                        file.createNewFile();
-                    }
-                    objectMapper.writeValue(file, issue);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (!file.exists()) {
+                    file.createNewFile();
                 }
-            });
+                objectMapper.writeValue(file, issue);
+            }, IOException.class));
         }
         return issues;
     }
 
-    private void fetchFileByDescription(String description, Long iid, String projectPath, Map<String, String> cookies) throws IOException {
+    private void fetchFileByDescription(String description, Long iid, String projectPath, Map<String, String> cookies, String projectName) throws IOException {
         Pattern pattern = Pattern.compile("(/uploads/.+?/(.+?).docx)");
         Matcher matcher = pattern.matcher(description);
         String link, fileName;
@@ -101,15 +97,15 @@ public class IssuesFetcher {
                 System.out.println("download: " + fileName + " for issue: " + iid.toString());
                 byte[] fileData = getUploadFile(cookies, projectPath + link);
                 if (fileData != null) {
-                    saveFile(fileData, iid, fileName);
+                    saveFile(fileData, iid, fileName, projectName);
                 }
             }
         }
     }
 
 
-    private void saveFile(byte[] fileData, Long iid, String fileName) throws IOException {
-        File file = new File("uploads\\" + iid.toString() + "\\" + fileName + ".docx");
+    private void saveFile(byte[] fileData, Long iid, String fileName, String projectName) throws IOException {
+        File file = new File(projectName + "\\" + iid.toString() + "\\" + fileName + ".docx");
         file.getParentFile().mkdirs();
         if (!file.exists()) {
             file.createNewFile();
@@ -173,14 +169,14 @@ public class IssuesFetcher {
         return fileData;
     }
 
-    public List<Issue> loadIssueDataFromDisk() throws IOException {
+    public List<Issue> loadIssueDataFromDisk(String projectName) throws IOException {
         List<Issue> issueList = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
-        File file = new File("uploads");
+        File file = new File(projectName);
         List<String> issueDirectories = file.list() == null ? Collections.emptyList() : Arrays.asList(Objects.requireNonNull(file.list()));
 
         for (String path : issueDirectories) {
-            file = new File("uploads\\" + path);
+            file = new File(projectName + "\\" + path);
             List<String> issueFiles = file.list() == null ? Collections.emptyList() : Arrays.asList(Objects.requireNonNull(file.list()));
 
             Issue issue = null;
@@ -191,14 +187,14 @@ public class IssuesFetcher {
                     if (issue != null) {
                         docsPath = issue.getDocsPath();
                     }
-                    issue = objectMapper.readValue(new File("uploads\\" + path + "\\" + issueFile), Issue.class);
+                    issue = objectMapper.readValue(new File(projectName + "\\" + path + "\\" + issueFile), Issue.class);
                     if (docsPath != null && !docsPath.isEmpty()) {
                         issue.getDocsPath().addAll(docsPath);
                     }
                     issueList.add(issue);
 
                 } else if (issueFile.contains("docx")) {
-                    String docPath = "uploads\\" + path + "\\" + issueFile;
+                    String docPath = projectName + "\\" + path + "\\" + issueFile;
                     if (issue == null) {
                         issue = new Issue();
                     }

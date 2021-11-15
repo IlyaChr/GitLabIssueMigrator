@@ -66,14 +66,16 @@ public class Fetcher {
             fromIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_FROM_PATH),
                     gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN),
+                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             issuesFetcher.fetchAllUploadsIssues(fromIssueList,
                     gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
                     gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
                     gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
                     gitLabProperties.getProperty(GITLAB_FROM_PASSWORD),
-                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH));
+                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH),
+                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             Instant finish = Instant.now();
             System.out.println("Elapsed Time in seconds: " + Duration.between(start, finish).getSeconds());
@@ -88,11 +90,12 @@ public class Fetcher {
         try {
             Instant start = Instant.now();
 
-            List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk();
+            List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk(gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
             List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN),
+                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
 
             issuesCreator.createIssues(fromIssueList, toIssueList,
@@ -114,7 +117,8 @@ public class Fetcher {
             List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN),
+                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             issuesDeleter.deleteIssues(toIssueList,
                     gitLabProperties.getProperty(GITLAB_TO_PATH),

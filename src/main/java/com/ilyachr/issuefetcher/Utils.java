@@ -43,6 +43,7 @@ public class Utils {
         GITLAB_FROM_PATH,
         GITLAB_FROM_PROJECT_ID,
         GITLAB_FROM_PROJECT_PATH,
+        GITLAB_PROJECT_NAME,
 
         GITLAB_TO_TOKEN,
         GITLAB_TO_PATH,
@@ -73,6 +74,8 @@ public class Utils {
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_ID, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_ID.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_PATH.name()));
+                gitLabProperties.put(GitLabEnum.GITLAB_PROJECT_NAME, properties.getProperty(GitLabEnum.GITLAB_PROJECT_NAME.name()));
+
 
                 gitLabProperties.put(GitLabEnum.GITLAB_TO_TOKEN, properties.getProperty(GitLabEnum.GITLAB_TO_TOKEN.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_TO_PATH, properties.getProperty(GitLabEnum.GITLAB_TO_PATH.name()));
