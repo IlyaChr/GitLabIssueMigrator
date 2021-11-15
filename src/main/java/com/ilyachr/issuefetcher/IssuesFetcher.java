@@ -209,31 +209,4 @@ public class IssuesFetcher {
         }
         return issueList;
     }
-
-    /*public void loginToGitHub() throws IOException {
-        HashMap<String, String> formData = new HashMap<>();
-        Connection.Response loginForm = Jsoup.connect("https://github.com/login")
-                .method(Connection.Method.GET).userAgent(USER_AGENT).execute();
-
-        Document loginDoc = loginForm.parse();
-        cookies.putAll(loginForm.cookies());
-
-        String authToken = loginDoc.select("#login > div.auth-form-body.mt-3 > form > input[type=hidden]:nth-child(1)")
-                .first()
-                .attr("value");
-
-        formData.put("utf8", "e2 9c 93");
-        formData.put("login", "IlyaChr");
-        formData.put("password", "Zerguard962111$");
-        formData.put("authenticity_token", authToken);
-
-        Connection.Response signIn = Jsoup.connect("https://github.com/session")
-                .cookies(cookies)
-                .data(formData)
-                .method(Connection.Method.POST)
-                .userAgent(USER_AGENT)
-                .execute();
-
-    }*/
-
 }

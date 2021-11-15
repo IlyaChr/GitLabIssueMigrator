@@ -29,7 +29,7 @@ public class IssuesCreator {
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
                 if (issue.getState().equals("closed")) {
-                    issuesUpdater.closeIssue(issue, projectPath, projectId, token);
+                    issuesUpdater.changeIssueState(issue, projectPath, projectId, token);
                 }
                 System.out.println("issue: " + issue.getIid() + " successfully created");
             } else {

@@ -13,11 +13,11 @@ import static com.ilyachr.issuefetcher.Utils.GitLabEnum.*;
 public class Fetcher {
 
     private static Utils gitLabProperties;
+    private static IssuesFetcher issuesFetcher = new IssuesFetcher();
+    private static IssuesDeleter issuesDeleter = new IssuesDeleter();
+    private static IssuesCreator issuesCreator = new IssuesCreator();
 
     public static void main(String[] args) {
-        IssuesFetcher issuesFetcher = new IssuesFetcher();
-        IssuesDeleter issuesDeleter = new IssuesDeleter();
-        IssuesCreator issuesCreator = new IssuesCreator();
 
         Scanner scanner = new Scanner(System.in);
 
@@ -25,7 +25,10 @@ public class Fetcher {
 
             System.out.println("Select loading or unloading mode");
             System.out.println("Before this config <config.properties> file");
-            System.out.println("Press L to load or U to unload issues...");
+            System.out.println("Press L to load issues from source project");
+            System.out.println("Press U to unload issues to destination project");
+            System.out.println("Press D to erase all issues in destination project");
+            System.out.println("Q to Quit...");
 
             try {
                 gitLabProperties = new Utils();
@@ -35,68 +38,91 @@ public class Fetcher {
 
             String line = scanner.nextLine();
 
-            if (line.equals("L")) {
-                List<Issue> kazanGitlabIssueList;
-                try {
-                    Instant start = Instant.now();
-
-                    kazanGitlabIssueList = issuesFetcher.fetchAllIssues(
-                            gitLabProperties.getProperty(GITLAB_FROM_PATH),
-                            gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                            gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
-
-                    issuesFetcher.fetchAllUploadsIssues(kazanGitlabIssueList,
-                            gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
-                            gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
-                            gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
-                            gitLabProperties.getProperty(GITLAB_FROM_PASSWORD),
-                            gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH));
-
-                    Instant finish = Instant.now();
-                    System.out.println("Elapsed Time in seconds: " + Duration.between(start, finish).getSeconds());
-                    System.out.println("Total issues fetched : " + kazanGitlabIssueList.size());
-                } catch (IOException e) {
-                    System.err.println("Error in loading issues");
-                    e.printStackTrace();
-                }
-                return;
-
-            } else if (line.equals("U")) {
-                try {
-                    Instant start = Instant.now();
-
-                    List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk();
-                    List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
-                            gitLabProperties.getProperty(GITLAB_TO_PATH),
-                            gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                            gitLabProperties.getProperty(GITLAB_TO_TOKEN));
-
-                    //To clean all issues (apply carefully!)
-                    /*if (!toIssueList.isEmpty()) {
-                        issuesDeleter.deleteIssues(toIssueList,
-                                gitLabProperties.getProperty(GITLAB_TO_PATH),
-                                gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                                gitLabProperties.getProperty(GITLAB_TO_TOKEN));
-                    }*/
-
-                    issuesCreator.createIssues(fromIssueList, toIssueList,
-                            gitLabProperties.getProperty(GITLAB_TO_PATH),
-                            gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                            gitLabProperties.getProperty(GITLAB_TO_TOKEN));
-
-                    Instant finish = Instant.now();
-                    System.out.println("Elapsed Time in seconds: " + Duration.between(start, finish).getSeconds());
-
-                } catch (IOException e) {
-                    System.err.println("Error in upload issues");
-                    e.printStackTrace();
-                }
-                return;
+            switch (line.toLowerCase()) {
+                case ("l"):
+                    loadIssues();
+                    return;
+                case ("u"):
+                    unloadIssues();
+                    return;
+                case ("d"):
+                    System.out.println("Are you sure ? Confirm this by type \"Yes\"");
+                    if (scanner.nextLine().equalsIgnoreCase("yes")) {
+                        deleteIssues();
+                        return;
+                    }
+                    break;
+                case ("q"):
+                    return;
             }
-
-
         }
-
     }
 
+    public static void loadIssues() {
+        List<Issue> fromIssueList;
+        try {
+            Instant start = Instant.now();
+
+            fromIssueList = issuesFetcher.fetchAllIssues(
+                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+
+            issuesFetcher.fetchAllUploadsIssues(fromIssueList,
+                    gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
+                    gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
+                    gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
+                    gitLabProperties.getProperty(GITLAB_FROM_PASSWORD),
+                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH));
+
+            Instant finish = Instant.now();
+            System.out.println("Elapsed Time in seconds: " + Duration.between(start, finish).getSeconds());
+            System.out.println("Total issues fetched : " + fromIssueList.size());
+        } catch (IOException e) {
+            System.err.println("Error in loading issues");
+            e.printStackTrace();
+        }
+    }
+
+    public static void unloadIssues() {
+        try {
+            Instant start = Instant.now();
+
+            List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk();
+            List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
+                    gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+
+            issuesCreator.createIssues(fromIssueList, toIssueList,
+                    gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+            Instant finish = Instant.now();
+            System.out.println("Elapsed Time in seconds: " + Duration.between(start, finish).getSeconds());
+
+        } catch (IOException e) {
+            System.err.println("Error in upload issues");
+            e.printStackTrace();
+        }
+    }
+
+    public static void deleteIssues() {
+        try {
+            List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
+                    gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+            issuesDeleter.deleteIssues(toIssueList,
+                    gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+        } catch (IOException e) {
+            System.err.println("Error in delete issues");
+            e.printStackTrace();
+        }
+    }
 }

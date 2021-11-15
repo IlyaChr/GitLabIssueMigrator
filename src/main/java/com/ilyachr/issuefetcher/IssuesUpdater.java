@@ -10,9 +10,9 @@ import java.nio.charset.StandardCharsets;
 
 public class IssuesUpdater {
 
-    public void closeIssue(Issue issue, String projectPath, String projectId, String token) throws IOException {
+    public void changeIssueState(Issue issue, String projectPath, String projectId, String token) throws IOException {
         URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues/" + issue.getIid());
-        HttpURLConnection connection = getConnectionForUrl(url, token, issue);
+        HttpURLConnection connection = getConnectionForUrl(url, token, true);
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
             System.out.println("issue: " + issue.getIid() + " successfully closed");
         }else{
@@ -21,7 +21,7 @@ public class IssuesUpdater {
         connection.disconnect();
     }
 
-    public HttpURLConnection getConnectionForUrl(URL url, String token, Issue issue) throws IOException {
+    public HttpURLConnection getConnectionForUrl(URL url, String token, boolean isClosed) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("PUT");
         connection.setRequestProperty("PRIVATE-TOKEN", token);
@@ -30,7 +30,8 @@ public class IssuesUpdater {
         connection.setDoOutput(true);
 
         try (OutputStream os = connection.getOutputStream()) {
-            String closeRequest = "{\"state_event\": \"close\" }";
+            String stateEvent = isClosed ? "close" : "reopen";
+            String closeRequest = "{\"state_event\": \""+stateEvent+"\" }";
             byte[] input = closeRequest.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }

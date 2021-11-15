@@ -66,4 +66,16 @@ public class Issue {
         docsPath.add(docPath);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Issue issue = (Issue) o;
+        return Objects.equals(iid, issue.iid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(iid);
+    }
 }
