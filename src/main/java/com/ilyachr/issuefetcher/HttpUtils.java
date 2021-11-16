@@ -65,9 +65,9 @@ public class HttpUtils {
      * @param uploadFile
      * @throws IOException
      */
-    public void addFilePart(String fieldName, File uploadFile)
+    public void addFilePart(String fileName,String fieldName, File uploadFile)
             throws IOException {
-        String fileName = uploadFile.getName();
+        //String fileName = uploadFile.getName();
         writer.append("--" + boundary).append(LINE);
         writer.append("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"").append(LINE);
         writer.append("Content-Type: multipart/form-data; charset=utf-8").append(LINE);

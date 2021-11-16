@@ -16,9 +16,9 @@ public class UploadFile {
      * @return new upload file path
      * @throws IOException
      */
-    public String uploadFile(String docPath, String projectPath, String projectId, String token) throws IOException {
+    public String uploadFile(String fileName,String docPath, String projectPath, String projectId, String token) throws IOException {
         HttpUtils multipart = new HttpUtils(projectPath, projectId, token);
-        multipart.addFilePart("file", new File(docPath));
+        multipart.addFilePart(fileName,"file", new File(docPath));
         String response = multipart.finish();
         return getNewFilePath(response);
     }

@@ -19,9 +19,11 @@ public class IssuesCreator {
 
         fromIssues.parallelStream().filter(i -> !toIssues.contains(i)).forEach(Utils.throwingConsumerWrapper(issue -> {
             if (issue.getDocsPath() != null) {
-                for (String docPath : issue.getDocsPath()) {
-                    String newNewFilePath = uploadFile.uploadFile(docPath, projectPath, projectId, token);
-                    issue.setDescription(getNewDescription(issue.getDescription(), newNewFilePath));
+
+                for (int i = 0; i < issue.getDocsPath().size(); i++) {
+                    String newFileName = issue.getIid().toString() + "_" + i + ".docx";
+                    String newNewFilePath = uploadFile.uploadFile(newFileName, issue.getDocsPath().get(i), projectPath, projectId, token);
+                    issue.setDescription(getNewDescription(issue.getDescription(), issue.getDocsPath().get(i), newNewFilePath));
                 }
             }
             URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues");
@@ -62,19 +64,18 @@ public class IssuesCreator {
         return connection;
     }
 
-    private String getNewDescription(String description, String newFilePath) {
-        Pattern pattern = Pattern.compile("(/uploads/.+?/(.+?).docx)");
-        Matcher matcher = pattern.matcher(description);
-        Matcher matcherNewFilePath = pattern.matcher(newFilePath);
-        matcherNewFilePath.find();
-        String fileName;
-        while (matcher.find()) {
-            fileName = matcher.group(2);
-            if (fileName.equals(matcherNewFilePath.group(2))) {
-                return description.replaceFirst("/uploads/.+?/" + fileName + ".docx", newFilePath);
-            }
+    private String getNewDescription(String description, String oldFilePath, String newFilePath) {
+
+        Pattern patternFilePath = Pattern.compile(".+[/\\\\](.+)[/\\\\](.+)");
+        Matcher fileOldPathMatcher = patternFilePath.matcher(oldFilePath);
+        Matcher fileNewPathMatcher = patternFilePath.matcher(newFilePath);
+
+        if (fileOldPathMatcher.find() && fileNewPathMatcher.find()) {
+            return description.replaceFirst("/uploads/(.+)/" + fileOldPathMatcher.group(2),
+                    "/uploads/" + fileNewPathMatcher.group(1) + "/" + fileNewPathMatcher.group(2));
         }
-        return description.replaceFirst("/uploads/.+?/(.+?).docx", newFilePath);
+
+        return description;
     }
 
 }
