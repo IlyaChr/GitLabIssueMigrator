@@ -70,7 +70,7 @@ public class HttpUtils {
         String fileName = uploadFile.getName();
         writer.append("--" + boundary).append(LINE);
         writer.append("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"").append(LINE);
-        writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(fileName)).append(LINE);
+        writer.append("Content-Type: multipart/form-data; charset=utf-8").append(LINE);
         writer.append("Content-Transfer-Encoding: binary").append(LINE);
         writer.append(LINE);
         writer.flush();

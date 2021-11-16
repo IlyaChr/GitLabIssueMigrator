@@ -23,8 +23,7 @@ public class Fetcher {
 
         while (true) {
 
-            System.out.println("Select loading or unloading mode");
-            System.out.println("Before this config <config.properties> file");
+            System.out.println("Before procedure check config <config.properties> file");
             System.out.println("Press L to load issues from source project");
             System.out.println("Press U to unload issues to destination project");
             System.out.println("Press D to erase all issues in destination project");
@@ -32,6 +31,7 @@ public class Fetcher {
 
             try {
                 gitLabProperties = new Utils();
+                gitLabProperties.disableSslVerification();
             } catch (IOException exception) {
                 continue;
             }
@@ -41,15 +41,14 @@ public class Fetcher {
             switch (line.toLowerCase()) {
                 case ("l"):
                     loadIssues();
-                    return;
+                    break;
                 case ("u"):
                     unloadIssues();
-                    return;
+                    break;
                 case ("d"):
                     System.out.println("Are you sure ? Confirm this by type \"Yes\"");
                     if (scanner.nextLine().equalsIgnoreCase("yes")) {
                         deleteIssues();
-                        return;
                     }
                     break;
                 case ("q"):
