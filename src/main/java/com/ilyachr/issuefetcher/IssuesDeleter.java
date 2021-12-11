@@ -12,7 +12,7 @@ import java.util.List;
 public class IssuesDeleter {
 
 
-    public void deleteIssues(List<Issue> issues, String projectPath, String projectId, String token) throws IOException {
+    public void deleteIssues(List<Issue> issues, String projectPath, String projectId, String token) {
         issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(i -> deleteIssue(projectPath, projectId, token, i.getIid()), IOException.class));
     }
 

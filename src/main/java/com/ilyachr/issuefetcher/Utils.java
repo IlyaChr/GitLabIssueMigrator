@@ -10,10 +10,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -45,7 +43,7 @@ public class Utils {
                 try {
                     E exCast = exceptionClass.cast(ex);
                     log.error(
-                            "Exception occured : {} " , exCast.getMessage());
+                            "Exception occured : {} ", exCast.getMessage());
                 } catch (ClassCastException ccEx) {
                     throw new RuntimeException(ex);
                 }

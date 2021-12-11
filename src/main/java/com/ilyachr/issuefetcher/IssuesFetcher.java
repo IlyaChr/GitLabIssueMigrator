@@ -1,6 +1,5 @@
 package com.ilyachr.issuefetcher;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
@@ -10,38 +9,47 @@ import org.jsoup.nodes.Document;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class IssuesFetcher {
+public class IssuesFetcher extends Fetching<Issue> {
+
+    public IssuesFetcher() {
+        super(Issue.class);
+    }
 
     public List<Issue> fetchAllIssues(String projectPath, String projectId, String token, String projectName) throws IOException {
+        List<Issue> issues = fetchAll(projectPath, projectId, token);
 
-        URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
-        HttpURLConnection connection = getConnectionForUrl(url, token);
-        List<Issue> issues = getIssuesForConnection(connection, projectName);
-
-        Pattern pattern = Pattern.compile("<(https://.{50,200}?)>; rel=\"next\"");
-        Matcher matcher;
-
-        while ((matcher = pattern.matcher(connection.getHeaderField("Link"))).find()) {
-            String page = matcher.group(1);
-            log.info("fetching on page: {}", page);
-            url = new URL(matcher.group(1));
-            connection = getConnectionForUrl(url, token);
-            issues.addAll(getIssuesForConnection(connection, projectName));
-        }
+        // saving issue to file using Issue API
+        issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
+            if (file.getParentFile().mkdirs()) {
+                log.debug("Directory {} was created", file.getPath());
+            }
+            if (file.createNewFile()) {
+                log.debug("File {} was successfully created ", file.getName());
+            }
+            objectMapper.writeValue(file, issue);
+        }, IOException.class));
 
         return issues;
     }
 
+    @Override
+    public URL getMainUrl(String projectPath, String projectId) throws MalformedURLException {
+        return new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
+    }
 
+    /**
+     * Saving docx files using web scraping
+     */
     public void fetchAllUploadsIssues(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException {
         Map<String, String> cookies;
         if ((cookies = signInToGitLab(loginFormUrl, actionUrl, userName, password)) == null) {
@@ -50,50 +58,11 @@ public class IssuesFetcher {
 
         issues.stream().parallel().filter(issue -> issue.getDescription() != null && !issue.getDescription().isEmpty()).forEach(Utils.throwingConsumerWrapper(issue ->
                 fetchFileByDescription(issue.getDescription(), issue.getIid(), projectPath, cookies, projectName), IOException.class));
-
     }
 
-    public HttpURLConnection getConnectionForUrl(URL url, String token) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("PRIVATE-TOKEN", token);
-        connection.setRequestProperty("Accept", "application/json");
-        return connection;
-    }
-
-    private List<Issue> getIssuesForConnection(HttpURLConnection connection, String projectName) throws IOException {
-        List<Issue> issues = new ArrayList<>();
-        int responseCode = connection.getResponseCode();
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            StringBuilder response = new StringBuilder();
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                String responseLine;
-                while ((responseLine = in.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-            }
-            issues = objectMapper.readValue(response.toString(), new TypeReference<List<Issue>>() {
-            });
-            connection.disconnect();
-
-            issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
-                File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
-                if (file.getParentFile().mkdirs()) {
-                    log.debug("Directory {} was created", file.getPath());
-                }
-                if (file.createNewFile()) {
-                    log.debug("File {} was successfully created ", file.getName());
-                }
-
-                objectMapper.writeValue(file, issue);
-            }, IOException.class));
-        }
-        return issues;
-    }
-
+    /**
+     * Trying to find and save docx file using web scraping
+     */
     private void fetchFileByDescription(String description, Long iid, String projectPath, Map<String, String> cookies, String projectName) throws IOException {
         Pattern pattern = Pattern.compile("(/uploads/.+?/(.+?).docx)");
         Matcher matcher = pattern.matcher(description);
@@ -104,7 +73,7 @@ public class IssuesFetcher {
             link = matcher.group(1);
             fileName = matcher.group(2);
             if (link != null && !link.isEmpty()) {
-                log.info("download: " + fileName + " for issue: " + iid.toString());
+                log.info("download: {} for issue: {}", fileName, iid);
                 byte[] fileData = getUploadFile(cookies, projectPath + link);
                 if (fileData != null) {
                     saveFile(fileData, iid, fileName, projectName);
@@ -113,7 +82,9 @@ public class IssuesFetcher {
         }
     }
 
-
+    /**
+     * Save docx to file system
+     */
     private void saveFile(byte[] fileData, Long iid, String fileName, String projectName) throws IOException {
         File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, iid.toString(), fileName) + ".docx");
         if (file.getParentFile().mkdirs()) {
@@ -128,6 +99,9 @@ public class IssuesFetcher {
         }
     }
 
+    /**
+     * Get cookies for authentication
+     */
     public Map<String, String> signInToGitLab(String loginFormUrl, String actionUrl, String userName, String password) throws IOException {
         HashMap<String, String> formData = new HashMap<>();
         Connection.Response loginForm = Jsoup.connect(loginFormUrl)
@@ -158,6 +132,9 @@ public class IssuesFetcher {
         return Collections.emptyMap();
     }
 
+    /**
+     * Get docx file from GitLab
+     */
     private byte[] getUploadFile(Map<String, String> cookies, String uploadLink) throws IOException {
         byte[] fileData = null;
 
@@ -182,6 +159,9 @@ public class IssuesFetcher {
         return fileData;
     }
 
+    /**
+     * Load issues from file system with attachments
+     */
     public List<Issue> loadIssueDataFromDisk(String projectName) {
         List<Issue> issueList = Collections.synchronizedList(new ArrayList<>());
         File projectRoot = new File(MessageFormat.format(Utils.PROJECT_PATH_TEMPLATE, projectName));

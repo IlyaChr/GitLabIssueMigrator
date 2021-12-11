@@ -19,6 +19,7 @@ public class Fetcher {
     private static final IssuesFetcher issuesFetcher = new IssuesFetcher();
     private static final IssuesDeleter issuesDeleter = new IssuesDeleter();
     private static final IssuesCreator issuesCreator = new IssuesCreator();
+    private static final UsersFetcher USERS_FETCHER = new UsersFetcher();
 
     public static void main(String[] args) {
 
@@ -81,10 +82,21 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             Instant finish = Instant.now();
-            log.info("Elapsed Time in seconds: {} " , Duration.between(start, finish).getSeconds());
+            log.info("Elapsed Time in seconds: {} ", Duration.between(start, finish).getSeconds());
             log.info("Total issues fetched : {} ", fromIssueList.size());
         } catch (IOException e) {
             log.error("Error in loading issues");
+            e.printStackTrace();
+        }
+    }
+
+    public static void getUsers() {
+        try {
+            USERS_FETCHER.getAllUsers(gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+        } catch (IOException e) {
+            log.error("Error in fetching Users");
             e.printStackTrace();
         }
     }
