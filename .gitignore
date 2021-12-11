@@ -2,6 +2,7 @@ target/
 /target/
 /uploads/
 /cacerts
+/logs/
 .idea/
 ekr/
 dossier/

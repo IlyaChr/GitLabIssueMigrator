@@ -3,6 +3,7 @@ package com.ilyachr.issuefetcher;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Issue;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -14,6 +15,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class IssuesFetcher {
 
     public List<Issue> fetchAllIssues(String projectPath, String projectId, String token, String projectName) throws IOException {
@@ -26,7 +28,8 @@ public class IssuesFetcher {
         Matcher matcher;
 
         while ((matcher = pattern.matcher(connection.getHeaderField("Link"))).find()) {
-            System.out.println("fetching on page: " + matcher.group(1));
+            String page = matcher.group(1);
+            log.info("fetching on page: {}", page);
             url = new URL(matcher.group(1));
             connection = getConnectionForUrl(url, token);
             issues.addAll(getIssuesForConnection(connection, projectName));
@@ -94,7 +97,7 @@ public class IssuesFetcher {
             link = matcher.group(1);
             fileName = matcher.group(2);
             if (link != null && !link.isEmpty()) {
-                System.out.println("download: " + fileName + " for issue: " + iid.toString());
+                log.info("download: " + fileName + " for issue: " + iid.toString());
                 byte[] fileData = getUploadFile(cookies, projectPath + link);
                 if (fileData != null) {
                     saveFile(fileData, iid, fileName, projectName);

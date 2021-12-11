@@ -2,6 +2,7 @@ package com.ilyachr.issuefetcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Issue;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 public class IssuesCreator {
 
     public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, String projectPath, String projectId, String token) throws IOException {
@@ -33,9 +35,9 @@ public class IssuesCreator {
                 if (issue.getState().equals("closed")) {
                     issuesUpdater.changeIssueState(issue, projectPath, projectId, token);
                 }
-                System.out.println("issue: " + issue.getIid() + " successfully created");
+                log.info("issue: {} successfully created", issue.getIid());
             } else {
-                System.err.println("issue: " + issue.getIid() + " not created - responseCode: " + connection.getResponseCode());
+                log.error("issue: {}  not created - responseCode: {}", issue.getIid(), connection.getResponseCode());
             }
 
             connection.disconnect();
