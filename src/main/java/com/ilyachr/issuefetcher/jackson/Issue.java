@@ -13,7 +13,6 @@ import java.util.Objects;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Issue {
 
@@ -50,19 +49,17 @@ public class Issue {
 
     private List<String> docsPath;
 
+    public Issue() {
+        docsPath = new ArrayList<>();
+    }
+
     @JsonIgnore
     public List<String> getDocsPath() {
-        if (docsPath == null) {
-            docsPath = new ArrayList<>();
-        }
         return docsPath;
     }
 
     @JsonIgnore
     public void addDocPath(String docPath) {
-        if (docsPath == null) {
-            docsPath = new ArrayList<>();
-        }
         docsPath.add(docPath);
     }
 

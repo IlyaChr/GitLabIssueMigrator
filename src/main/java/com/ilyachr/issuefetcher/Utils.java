@@ -1,5 +1,7 @@
 package com.ilyachr.issuefetcher;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.net.ssl.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,19 +9,27 @@ import java.io.InputStream;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-
+@Slf4j
 public class Utils {
 
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36";
+
+    public static final String PROJECT_PATH_TEMPLATE = "uploads/{0}";
+
+    public static final String ISSUE_FOLDER_PATH_TEMPLATE = "uploads/{0}/{1}";
+
+    public static final String ISSUE_PATH_TEMPLATE = "uploads/{0}/{1}/{2}";
+
     public static final String PROPERTIES_FILE_NAME = "config.properties";
 
-    private final Map<GitLabEnum, String> gitLabProperties = new HashMap<>();
+    private final Map<GitLabEnum, String> gitLabProperties = new EnumMap<>(GitLabEnum.class);
 
     @FunctionalInterface
     public static interface ThrowingConsumer<T, E extends Exception> {
@@ -34,8 +44,8 @@ public class Utils {
             } catch (Exception ex) {
                 try {
                     E exCast = exceptionClass.cast(ex);
-                    System.err.println(
-                            "Exception occured : " + exCast.getMessage());
+                    log.error(
+                            "Exception occured : {} " , exCast.getMessage());
                 } catch (ClassCastException ccEx) {
                     throw new RuntimeException(ex);
                 }
@@ -128,9 +138,7 @@ public class Utils {
 
             // Install the all-trusting host verifier
             HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
             e.printStackTrace();
         }
     }

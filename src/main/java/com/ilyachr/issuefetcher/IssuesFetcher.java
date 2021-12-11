@@ -11,7 +11,10 @@ import org.jsoup.nodes.Document;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,7 +69,7 @@ public class IssuesFetcher {
             StringBuilder response = new StringBuilder();
             ObjectMapper objectMapper = new ObjectMapper();
 
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                 String responseLine;
                 while ((responseLine = in.readLine()) != null) {
                     response.append(responseLine.trim());
@@ -77,11 +80,14 @@ public class IssuesFetcher {
             connection.disconnect();
 
             issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
-                File file = new File(projectName + "\\" + issue.getIid() + "\\" + issue.getIid() + ".json");
-                file.getParentFile().mkdirs();
-                if (!file.exists()) {
-                    file.createNewFile();
+                File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
+                if (file.getParentFile().mkdirs()) {
+                    log.debug("Directory {} was created", file.getPath());
                 }
+                if (file.createNewFile()) {
+                    log.debug("File {} was successfully created ", file.getName());
+                }
+
                 objectMapper.writeValue(file, issue);
             }, IOException.class));
         }
@@ -91,7 +97,8 @@ public class IssuesFetcher {
     private void fetchFileByDescription(String description, Long iid, String projectPath, Map<String, String> cookies, String projectName) throws IOException {
         Pattern pattern = Pattern.compile("(/uploads/.+?/(.+?).docx)");
         Matcher matcher = pattern.matcher(description);
-        String link, fileName;
+        String link;
+        String fileName;
 
         while (matcher.find()) {
             link = matcher.group(1);
@@ -108,14 +115,17 @@ public class IssuesFetcher {
 
 
     private void saveFile(byte[] fileData, Long iid, String fileName, String projectName) throws IOException {
-        File file = new File(projectName + "\\" + iid.toString() + "\\" + fileName + ".docx");
-        file.getParentFile().mkdirs();
-        if (!file.exists()) {
-            file.createNewFile();
+        File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, iid.toString(), fileName) + ".docx");
+        if (file.getParentFile().mkdirs()) {
+            log.debug("Directory {} was created", file.getPath());
         }
-        FileOutputStream outputStream = new FileOutputStream(file, false);
-        outputStream.write(fileData);
-        outputStream.close();
+        if (file.createNewFile()) {
+            log.debug("File {} was successfully created ", file.getName());
+        }
+
+        try (FileOutputStream outputStream = new FileOutputStream(file, false)) {
+            outputStream.write(fileData);
+        }
     }
 
     public Map<String, String> signInToGitLab(String loginFormUrl, String actionUrl, String userName, String password) throws IOException {
@@ -125,8 +135,8 @@ public class IssuesFetcher {
 
         Document loginDoc = loginForm.parse();
 
-        String authToken = loginDoc.select("#new_user > input[type=hidden]:nth-child(2)")
-                .first()
+        String authToken = Objects.requireNonNull(loginDoc.select("#new_user > input[type=hidden]:nth-child(2)")
+                        .first())
                 .attr("value");
 
         formData.put("utf8", "e2 9c 93");
@@ -145,7 +155,7 @@ public class IssuesFetcher {
         if (signIn.statusCode() == HttpURLConnection.HTTP_OK) {
             return signIn.cookies();
         }
-        return null;
+        return Collections.emptyMap();
     }
 
     private byte[] getUploadFile(Map<String, String> cookies, String uploadLink) throws IOException {
@@ -172,40 +182,30 @@ public class IssuesFetcher {
         return fileData;
     }
 
-    public List<Issue> loadIssueDataFromDisk(String projectName) throws IOException {
-        List<Issue> issueList = new ArrayList<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-        File file = new File(projectName);
-        List<String> issueDirectories = file.list() == null ? Collections.emptyList() : Arrays.asList(Objects.requireNonNull(file.list()));
+    public List<Issue> loadIssueDataFromDisk(String projectName) {
+        List<Issue> issueList = Collections.synchronizedList(new ArrayList<>());
+        File projectRoot = new File(MessageFormat.format(Utils.PROJECT_PATH_TEMPLATE, projectName));
+        List<String> issueDirectories = projectRoot.list() == null ? Collections.emptyList() : Arrays.asList(Objects.requireNonNull(projectRoot.list()));
 
-        for (String path : issueDirectories) {
-            file = new File(projectName + "\\" + path);
+
+        issueDirectories.stream().parallel().forEach(Utils.throwingConsumerWrapper(path -> {
+            File file = new File(MessageFormat.format(Utils.ISSUE_FOLDER_PATH_TEMPLATE, projectName, path));
             List<String> issueFiles = file.list() == null ? Collections.emptyList() : Arrays.asList(Objects.requireNonNull(file.list()));
 
-            Issue issue = null;
-
+            Issue issue = new Issue();
+            ObjectMapper objectMapper = new ObjectMapper();
             for (String issueFile : issueFiles) {
+                String docPath = MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, path, issueFile);
                 if (issueFile.contains("json")) {
-                    List<String> docsPath = new ArrayList<>();
-                    if (issue != null) {
-                        docsPath = issue.getDocsPath();
-                    }
-                    issue = objectMapper.readValue(new File(projectName + "\\" + path + "\\" + issueFile), Issue.class);
-                    if (docsPath != null && !docsPath.isEmpty()) {
-                        issue.getDocsPath().addAll(docsPath);
-                    }
+                    issue = objectMapper.readValue(new File(docPath), Issue.class);
                     issueList.add(issue);
-
                 } else if (issueFile.contains("docx")) {
-                    String docPath = projectName + "\\" + path + "\\" + issueFile;
-                    if (issue == null) {
-                        issue = new Issue();
-                    }
                     issue.addDocPath(docPath);
                 }
             }
 
-        }
+        }, IOException.class));
+
         return issueList;
     }
 }
