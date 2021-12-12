@@ -40,7 +40,7 @@ public abstract class Fetching<T> {
 
             while ((matcher = pattern.matcher(getHeaderField(connection))).find()) {
                 String page = matcher.group(1);
-                log.debug("fetching page: {}", page);
+                log.info("fetching page: {}", page);
                 url = new URL(matcher.group(1));
                 connection = getConnectionForUrl(url, token);
                 pages.add(url);

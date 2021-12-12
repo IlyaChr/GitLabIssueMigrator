@@ -1,21 +1,23 @@
 package com.ilyachr.issuefetcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ilyachr.issuefetcher.jackson.Assignee;
 import com.ilyachr.issuefetcher.jackson.Issue;
+import com.ilyachr.issuefetcher.jackson.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 public class IssuesCreator {
-
-    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, String projectPath, String projectId, String token) throws IOException {
+    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, List<User> toUsersList, String projectPath, String projectId, String token) {
         IssuesUpdater issuesUpdater = new IssuesUpdater();
         UploadFile uploadFile = new UploadFile();
 
@@ -32,10 +34,12 @@ public class IssuesCreator {
             HttpURLConnection connection = getConnectionForUrl(url, token, issue);
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-                if (issue.getState().equals("closed")) {
-                    issuesUpdater.changeIssueState(issue, projectPath, projectId, token);
-                }
                 log.info("issue: {} successfully created", issue.getIid());
+                List<User> newAssignees = getNewAssigneeForIssue(issue, toUsersList);
+                boolean isClosed = issue.getState().equals("closed");
+                if (!newAssignees.isEmpty() || isClosed) {
+                    issuesUpdater.updateIssue(issue, newAssignees, issue.getState().equals("closed"), projectPath, projectId, token);
+                }
             } else {
                 log.error("issue: {}  not created - responseCode: {}", issue.getIid(), connection.getResponseCode());
             }
@@ -65,6 +69,21 @@ public class IssuesCreator {
 
         return connection;
     }
+
+    private List<User> getNewAssigneeForIssue(Issue issue, List<User> toUsersList) {
+        List<User> users = new ArrayList<>();
+        for (User userFromList : toUsersList) {
+            for (Assignee assignee : issue.getAssignees()) {
+                if (assignee.getName() != null &&
+                        userFromList.getName() != null &&
+                        userFromList.getName().equals(assignee.getName())) {
+                    users.add(userFromList);
+                }
+            }
+        }
+        return users;
+    }
+
 
     private String getNewDescription(String description, String oldFilePath, String newFilePath) {
 

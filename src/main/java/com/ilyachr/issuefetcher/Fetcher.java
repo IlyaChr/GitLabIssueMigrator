@@ -1,6 +1,7 @@
 package com.ilyachr.issuefetcher;
 
 import com.ilyachr.issuefetcher.jackson.Issue;
+import com.ilyachr.issuefetcher.jackson.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class Fetcher {
     private static final IssuesFetcher issuesFetcher = new IssuesFetcher();
     private static final IssuesDeleter issuesDeleter = new IssuesDeleter();
     private static final IssuesCreator issuesCreator = new IssuesCreator();
-    private static final UsersFetcher USERS_FETCHER = new UsersFetcher();
+    private static final UsersFetcher usersFetcher = new UsersFetcher();
 
     public static void main(String[] args) {
 
@@ -70,10 +71,11 @@ public class Fetcher {
             fromIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_FROM_PATH),
                     gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN),
-                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
-            issuesFetcher.fetchAllUploadsIssues(fromIssueList,
+            issuesFetcher.saveIssueToFile(fromIssueList, gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+
+            issuesFetcher.saveIssueUploads(fromIssueList,
                     gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
                     gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
                     gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
@@ -90,17 +92,6 @@ public class Fetcher {
         }
     }
 
-    public static void getUsers() {
-        try {
-            USERS_FETCHER.getAllUsers(gitLabProperties.getProperty(GITLAB_FROM_PATH),
-                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
-        } catch (IOException e) {
-            log.error("Error in fetching Users");
-            e.printStackTrace();
-        }
-    }
-
     public static void unloadIssues() {
         try {
             Instant start = Instant.now();
@@ -109,11 +100,13 @@ public class Fetcher {
             List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN),
-                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
+            List<User> toUsersList = usersFetcher.getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            issuesCreator.createIssues(fromIssueList, toIssueList,
+            issuesCreator.createIssues(fromIssueList, toIssueList, toUsersList,
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));
@@ -132,8 +125,7 @@ public class Fetcher {
             List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN),
-                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
             issuesDeleter.deleteIssues(toIssueList,
                     gitLabProperties.getProperty(GITLAB_TO_PATH),

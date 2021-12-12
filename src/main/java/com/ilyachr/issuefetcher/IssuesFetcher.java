@@ -23,10 +23,19 @@ public class IssuesFetcher extends Fetching<Issue> {
         super(Issue.class);
     }
 
-    public List<Issue> fetchAllIssues(String projectPath, String projectId, String token, String projectName) throws IOException {
-        List<Issue> issues = fetchAll(projectPath, projectId, token);
+    public List<Issue> fetchAllIssues(String projectPath, String projectId, String token) throws IOException {
+        return fetchAll(projectPath, projectId, token);
+    }
 
-        // saving issue to file using Issue API
+    @Override
+    public URL getMainUrl(String projectPath, String projectId) throws MalformedURLException {
+        return new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
+    }
+
+    /**
+     * Saving issue to file using Issue API
+     */
+    public void saveIssueToFile(List<Issue> issues,String projectName){
         issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
             ObjectMapper objectMapper = new ObjectMapper();
             File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
@@ -38,19 +47,12 @@ public class IssuesFetcher extends Fetching<Issue> {
             }
             objectMapper.writeValue(file, issue);
         }, IOException.class));
-
-        return issues;
-    }
-
-    @Override
-    public URL getMainUrl(String projectPath, String projectId) throws MalformedURLException {
-        return new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
     }
 
     /**
      * Saving docx files using web scraping
      */
-    public void fetchAllUploadsIssues(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException {
+    public void saveIssueUploads(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException {
         Map<String, String> cookies;
         if ((cookies = signInToGitLab(loginFormUrl, actionUrl, userName, password)) == null) {
             return;
