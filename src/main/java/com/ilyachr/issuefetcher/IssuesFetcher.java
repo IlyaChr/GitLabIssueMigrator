@@ -38,7 +38,7 @@ public class IssuesFetcher extends Fetching<Issue> {
     public void saveIssueToFile(List<Issue> issues,String projectName){
         issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
             ObjectMapper objectMapper = new ObjectMapper();
-            File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
+            File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, String.valueOf(issue.getIid()), String.valueOf(issue.getIid())) + ".json");
             if (file.getParentFile().mkdirs()) {
                 log.debug("Directory {} was created", file.getPath());
             }
@@ -88,7 +88,7 @@ public class IssuesFetcher extends Fetching<Issue> {
      * Save docx to file system
      */
     private void saveFile(byte[] fileData, Long iid, String fileName, String projectName) throws IOException {
-        File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, iid.toString(), fileName) + ".docx");
+        File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, String.valueOf(iid), fileName) + ".docx");
         if (file.getParentFile().mkdirs()) {
             log.debug("Directory {} was created", file.getPath());
         }
