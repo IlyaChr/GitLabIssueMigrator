@@ -35,7 +35,7 @@ public class IssuesFetcher extends Fetching<Issue> {
     /**
      * Saving issue to file using Issue API
      */
-    public void saveIssueToFile(List<Issue> issues,String projectName){
+    public void saveIssueToFile(List<Issue> issues, String projectName) {
         issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(issue -> {
             ObjectMapper objectMapper = new ObjectMapper();
             File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, issue.getIid(), issue.getIid()) + ".json");
@@ -179,7 +179,9 @@ public class IssuesFetcher extends Fetching<Issue> {
             for (String issueFile : issueFiles) {
                 String docPath = MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, path, issueFile);
                 if (issueFile.contains("json")) {
+                    List<String> tempDocsPath = issue.getDocsPath();
                     issue = objectMapper.readValue(new File(docPath), Issue.class);
+                    issue.getDocsPath().addAll(tempDocsPath);
                     issueList.add(issue);
                 } else if (issueFile.contains("docx")) {
                     issue.addDocPath(docPath);
