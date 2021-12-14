@@ -28,18 +28,26 @@ public class Fetcher {
 
         while (true) {
 
+            try {
+                gitLabProperties = new Utils();
+                gitLabProperties.disableSslVerification();
+            } catch (IOException exception) {
+                log.error("Error in config file");
+                return;
+            }
+
+            log.info(" ------------ GitLab Parameters ------------ ");
+            for (Utils.GitLabEnum labEnum : Utils.GitLabEnum.values()){
+                log.info(" {} : {} ",labEnum,gitLabProperties.getProperty(labEnum));
+            }
+            log.info(" ------------------------------------------- ");
+
             log.info("Before procedure check config <config.properties> file");
             log.info("Press L to load issues from source project");
             log.info("Press U to unload issues to destination project");
             log.info("Press D to erase all issues in destination project");
             log.info("Q to Quit...");
 
-            try {
-                gitLabProperties = new Utils();
-                gitLabProperties.disableSslVerification();
-            } catch (IOException exception) {
-                continue;
-            }
 
             String line = scanner.nextLine();
 
