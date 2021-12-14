@@ -25,8 +25,9 @@ public class IssuesCreator {
             if (issue.getDocsPath() != null) {
 
                 for (int i = 0; i < issue.getDocsPath().size(); i++) {
-                    String newFileName = issue.getIid().toString() + "_" + i + ".docx";
-                    String newNewFilePath = uploadFile.uploadFile(newFileName, issue.getDocsPath().get(i), projectPath, projectId, token);
+                    //String newFileName = issue.getIid().toString() + "_" + i + ".docx";
+                    String fileName = issue.getDocsPath().get(i);
+                    String newNewFilePath = uploadFile.uploadFile(fileName, issue.getDocsPath().get(i), projectPath, projectId, token);
                     issue.setDescription(getNewDescription(issue.getDescription(), issue.getDocsPath().get(i), newNewFilePath));
                 }
             }
