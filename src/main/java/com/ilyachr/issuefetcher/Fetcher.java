@@ -1,13 +1,13 @@
 package com.ilyachr.issuefetcher;
 
 import com.ilyachr.issuefetcher.jackson.Issue;
-import com.ilyachr.issuefetcher.jackson.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import static com.ilyachr.issuefetcher.Utils.GitLabEnum.*;
@@ -37,8 +37,8 @@ public class Fetcher {
             }
 
             log.info(" ------------ GitLab Parameters ------------ ");
-            for (Utils.GitLabEnum labEnum : Utils.GitLabEnum.values()){
-                log.info(" {} : {} ",labEnum,gitLabProperties.getProperty(labEnum));
+            for (Utils.GitLabEnum labEnum : Utils.GitLabEnum.values()) {
+                log.info(" {} : {} ", labEnum, gitLabProperties.getProperty(labEnum));
             }
             log.info(" ------------------------------------------- ");
 
@@ -110,11 +110,11 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            List<User> toUsersList = usersFetcher.getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
+            Map<String, Integer> usersIds = usersFetcher.getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            issuesCreator.createIssues(fromIssueList, toIssueList, toUsersList,
+            issuesCreator.createIssues(fromIssueList, toIssueList, usersIds,
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));

@@ -6,7 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class UsersFetcher extends Fetching<User> {
@@ -15,8 +16,13 @@ public class UsersFetcher extends Fetching<User> {
         super(User.class);
     }
 
-    public List<User> getAllUsers(String projectPath, String projectId, String token) throws IOException {
-        return fetchAll(projectPath, projectId, token);
+    public Map<String, Integer> getAllUsers(String projectPath, String projectId, String token) throws IOException {
+
+        Map<String, Integer> usersIds;
+        usersIds = fetchAll(projectPath, projectId, token)
+                .stream().collect(Collectors.toMap(User::getName, User::getId));
+
+        return usersIds;
     }
 
 

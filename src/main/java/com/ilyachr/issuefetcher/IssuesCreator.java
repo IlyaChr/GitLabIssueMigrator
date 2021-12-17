@@ -12,12 +12,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
 public class IssuesCreator {
-    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, List<User> toUsersList, String projectPath, String projectId, String token) {
+    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, Map<String, Integer> usersIds, String projectPath, String projectId, String token) {
         IssuesUpdater issuesUpdater = new IssuesUpdater();
         UploadFile uploadFile = new UploadFile();
 
@@ -36,10 +37,10 @@ public class IssuesCreator {
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
                 log.info("issue: {} successfully created", issue.getIid());
-                List<User> newAssignees = getNewAssigneeForIssue(issue, toUsersList);
+                List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
                 boolean isClosed = issue.getState().equals("closed");
-                if (!newAssignees.isEmpty() || isClosed) {
-                    issuesUpdater.updateIssue(issue, newAssignees, issue.getState().equals("closed"), projectPath, projectId, token);
+                if (!newAssigneeIds.isEmpty() || isClosed) {
+                    issuesUpdater.updateIssue(issue, newAssigneeIds, issue.getState().equals("closed"), projectPath, projectId, token);
                 }
             } else {
                 log.error("issue: {}  not created - responseCode: {}", issue.getIid(), connection.getResponseCode());
@@ -71,18 +72,15 @@ public class IssuesCreator {
         return connection;
     }
 
-    private List<User> getNewAssigneeForIssue(Issue issue, List<User> toUsersList) {
-        List<User> users = new ArrayList<>();
-        for (User userFromList : toUsersList) {
-            for (Assignee assignee : issue.getAssignees()) {
-                if (assignee.getName() != null &&
-                        userFromList.getName() != null &&
-                        userFromList.getName().equals(assignee.getName())) {
-                    users.add(userFromList);
-                }
+    private List<Integer> getNewAssigneeIdsForIssue(Issue issue, Map<String, Integer> usersIds) {
+        List<Integer> newAssigneeIds = new ArrayList<>();
+
+        for (Assignee assignee : issue.getAssignees()) {
+            if (assignee.getName() != null && usersIds.containsKey(assignee.getName())) {
+                newAssigneeIds.add(usersIds.get(assignee.getName()));
             }
         }
-        return users;
+        return newAssigneeIds;
     }
 
 
