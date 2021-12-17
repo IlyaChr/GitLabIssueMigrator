@@ -3,7 +3,6 @@ package com.ilyachr.issuefetcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Assignee;
 import com.ilyachr.issuefetcher.jackson.Issue;
-import com.ilyachr.issuefetcher.jackson.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
