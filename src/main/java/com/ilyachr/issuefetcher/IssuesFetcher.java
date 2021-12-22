@@ -66,7 +66,7 @@ public class IssuesFetcher extends Fetching<Issue> {
      * Trying to find and save docx file using web scraping
      */
     private void fetchFileByDescription(String description, Long iid, String projectPath, Map<String, String> cookies, String projectName) throws IOException {
-        Pattern pattern = Pattern.compile("(/uploads/.+?/(.+?).(.+))");
+        Pattern pattern = Pattern.compile("\\((/uploads/.+?/(.+?))\\)");
         Matcher matcher = pattern.matcher(description);
         String link;
         String fileName;
@@ -88,7 +88,7 @@ public class IssuesFetcher extends Fetching<Issue> {
      * Save docx to file system
      */
     private void saveFile(byte[] fileData, Long iid, String fileName, String projectName) throws IOException {
-        File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, String.valueOf(iid), fileName) + ".docx");
+        File file = new File(MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, String.valueOf(iid), fileName));
         if (file.getParentFile().mkdirs()) {
             log.debug("Directory {} was created", file.getPath());
         }
