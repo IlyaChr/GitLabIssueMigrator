@@ -52,6 +52,8 @@ public class Utils {
     }
 
     public enum GitLabEnum {
+        SSL_DISABLE,
+
         GITLAB_FROM_TOKEN,
         GITLAB_FROM_PATH,
         GITLAB_FROM_PROJECT_ID,
@@ -82,6 +84,8 @@ public class Utils {
 
             if (inputStream != null) {
                 properties.load(inputStream);
+
+                gitLabProperties.put(GitLabEnum.SSL_DISABLE, properties.getProperty(GitLabEnum.SSL_DISABLE.name()));
 
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_TOKEN, properties.getProperty(GitLabEnum.GITLAB_FROM_TOKEN.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()));

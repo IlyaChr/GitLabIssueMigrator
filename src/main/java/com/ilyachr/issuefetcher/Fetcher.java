@@ -30,7 +30,9 @@ public class Fetcher {
 
             try {
                 gitLabProperties = new Utils();
-                gitLabProperties.disableSslVerification();
+                if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(SSL_DISABLE))){
+                    gitLabProperties.disableSslVerification();
+                }
             } catch (IOException exception) {
                 log.error("Error in config file");
                 return;
