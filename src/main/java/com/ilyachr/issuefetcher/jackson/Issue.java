@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.gitlab4j.api.models.Note;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,8 +50,11 @@ public class Issue {
 
     private List<String> docsPath;
 
+    private List<Note> noteList;
+
     public Issue() {
         docsPath = new ArrayList<>();
+        noteList = new ArrayList<>();
     }
 
     @JsonIgnore

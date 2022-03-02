@@ -2,6 +2,10 @@ package com.ilyachr.issuefetcher;
 
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
+import org.gitlab4j.api.EpicsApi;
+import org.gitlab4j.api.GitLabApi;
+import org.gitlab4j.api.GitLabApiException;
+import org.gitlab4j.api.models.Epic;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,6 +13,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Slf4j
 public class IssuesUpdater {

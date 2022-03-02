@@ -3,9 +3,7 @@ package com.ilyachr.issuefetcher;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.net.ssl.*;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -77,10 +75,9 @@ public class Utils {
     }
 
     private void readProperties() throws FileNotFoundException {
-
         Properties properties = new Properties();
-
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME)) {
+        File file = new File("../" + PROPERTIES_FILE_NAME);
+        try (InputStream inputStream = (file.exists()) ? new FileInputStream(file) : getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME)) {
 
             if (inputStream != null) {
                 properties.load(inputStream);
