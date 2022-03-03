@@ -23,9 +23,7 @@ public class IssuesCreator {
 
         fromIssues.parallelStream().filter(i -> !toIssues.contains(i)).forEach(Utils.throwingConsumerWrapper(issue -> {
             if (issue.getDocsPath() != null) {
-
                 for (int i = 0; i < issue.getDocsPath().size(); i++) {
-                    //String newFileName = issue.getIid().toString() + "_" + i + ".docx";
                     String fileName = issue.getDocsPath().get(i);
                     String newNewFilePath = uploadFile.uploadFile(fileName, issue.getDocsPath().get(i), projectPath, projectId, token);
                     issue.setDescription(getNewDescription(issue.getDescription(), issue.getDocsPath().get(i), newNewFilePath));
@@ -36,6 +34,7 @@ public class IssuesCreator {
 
             if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
                 log.info("issue: {} successfully created", issue.getIid());
+                NotesFetcher.saveNotes(issue,projectPath,projectId,token);
                 List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
                 boolean isClosed = issue.getState().equals("closed");
                 if (!newAssigneeIds.isEmpty() || isClosed) {

@@ -3,6 +3,7 @@ package com.ilyachr.issuefetcher;
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -30,7 +31,9 @@ public class Fetcher {
 
             try {
                 gitLabProperties = new Utils();
-                gitLabProperties.disableSslVerification();
+                if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(SSL_DISABLE))) {
+                    gitLabProperties.disableSslVerification();
+                }
             } catch (IOException exception) {
                 log.error("Error in config file");
                 return;
@@ -54,6 +57,7 @@ public class Fetcher {
             switch (line.toLowerCase()) {
                 case ("l"):
                     loadIssues();
+                    //loadEpics();
                     break;
                 case ("u"):
                     unloadIssues();
@@ -81,6 +85,11 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
+            NotesFetcher.setNotes(fromIssueList,
+                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+
             issuesFetcher.saveIssueToFile(fromIssueList, gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             issuesFetcher.saveIssueUploads(fromIssueList,
@@ -92,11 +101,12 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
             Instant finish = Instant.now();
-            log.info("Elapsed Time in seconds: {} ", Duration.between(start, finish).getSeconds());
-            log.info("Total issues fetched : {} ", fromIssueList.size());
+            log.debug("Elapsed Time in seconds: {} ", Duration.between(start, finish).getSeconds());
+            log.debug("Total issues fetched : {} ", fromIssueList.size());
         } catch (IOException e) {
-            log.error("Error in loading issues");
-            e.printStackTrace();
+            log.error("Error in loading issues - {}", e.getMessage());
+        } catch (AuthenticationException e) {
+            log.error("Error in loading docs - Password or login to GitLab is incorrect - {}", e.getMessage());
         }
     }
 
@@ -120,11 +130,10 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
             Instant finish = Instant.now();
-            log.info("Elapsed Time in seconds: {}", Duration.between(start, finish).getSeconds());
+            log.debug("Elapsed Time in seconds: {}", Duration.between(start, finish).getSeconds());
 
         } catch (IOException e) {
-            log.error("Error in upload issues");
-            e.printStackTrace();
+            log.error("Error in upload issues - {}", e.getMessage());
         }
     }
 
@@ -140,8 +149,7 @@ public class Fetcher {
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));
         } catch (IOException e) {
-            log.error("Error in delete issues");
-            e.printStackTrace();
+            log.error("Error in delete issues - {}", e.getMessage());
         }
     }
 }

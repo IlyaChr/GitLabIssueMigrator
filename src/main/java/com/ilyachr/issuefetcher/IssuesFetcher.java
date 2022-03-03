@@ -7,6 +7,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import javax.naming.AuthenticationException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -52,7 +53,7 @@ public class IssuesFetcher extends Fetching<Issue> {
     /**
      * Saving docx files using web scraping
      */
-    public void saveIssueUploads(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException {
+    public void saveIssueUploads(List<Issue> issues, String loginFormUrl, String actionUrl, String userName, String password, String projectPath, String projectName) throws IOException, AuthenticationException {
         Map<String, String> cookies;
         if ((cookies = signInToGitLab(loginFormUrl, actionUrl, userName, password)) == null) {
             return;
@@ -104,7 +105,7 @@ public class IssuesFetcher extends Fetching<Issue> {
     /**
      * Get cookies for authentication
      */
-    public Map<String, String> signInToGitLab(String loginFormUrl, String actionUrl, String userName, String password) throws IOException {
+    public Map<String, String> signInToGitLab(String loginFormUrl, String actionUrl, String userName, String password) throws IOException, AuthenticationException {
         HashMap<String, String> formData = new HashMap<>();
         Connection.Response loginForm = Jsoup.connect(loginFormUrl)
                 .method(Connection.Method.GET).userAgent(Utils.USER_AGENT).execute();
@@ -128,10 +129,10 @@ public class IssuesFetcher extends Fetching<Issue> {
                 .userAgent(Utils.USER_AGENT)
                 .execute();
 
-        if (signIn.statusCode() == HttpURLConnection.HTTP_OK) {
+        if (signIn.statusCode() == HttpURLConnection.HTTP_OK && signIn.method().name().equals("GET")) {
             return signIn.cookies();
         }
-        return Collections.emptyMap();
+        throw new AuthenticationException("user[login] : " + userName + " \t user[password] : " + password);
     }
 
     /**
