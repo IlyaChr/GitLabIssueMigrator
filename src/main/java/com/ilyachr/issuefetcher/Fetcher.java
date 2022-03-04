@@ -2,6 +2,8 @@ package com.ilyachr.issuefetcher;
 
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
+import org.gitlab4j.api.GitLabApiException;
+import org.gitlab4j.api.models.Epic;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import static com.ilyachr.issuefetcher.EpicsFetcher.EPICS_FETCHER;
 import static com.ilyachr.issuefetcher.Utils.GitLabEnum.*;
 
 
@@ -46,23 +49,22 @@ public class Fetcher {
             log.info(" ------------------------------------------- ");
 
             log.info("Before procedure check config <config.properties> file");
-            log.info("Press L to load issues from source project");
-            log.info("Press U to unload issues to destination project");
-            log.info("Press D to erase all issues in destination project");
+            log.info("Type export to export issues from source project");
+            log.info("Type import to import issues to destination project");
+            log.info("Type erase to erase all issues in destination project (deprecated)");
             log.info("Q to Quit...");
 
 
             String line = scanner.nextLine();
 
             switch (line.toLowerCase()) {
-                case ("l"):
-                    loadIssues();
-                    //loadEpics();
+                case ("export"):
+                    issueExport();
                     break;
-                case ("u"):
-                    unloadIssues();
+                case ("import"):
+                    issueImport();
                     break;
-                case ("d"):
+                case ("erase"):
                     log.info("Are you sure ? Confirm this by type \"Yes\"");
                     if (scanner.nextLine().equalsIgnoreCase("yes")) {
                         deleteIssues();
@@ -75,17 +77,26 @@ public class Fetcher {
         }
     }
 
-    public static void loadIssues() {
+    public static void issueExport() {
         List<Issue> fromIssueList;
+        List<Epic> fromEpicList;
         try {
             Instant start = Instant.now();
+
+            fromEpicList = EPICS_FETCHER.fetchEpics(
+                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                    gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID),
+                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+
+            EPICS_FETCHER.saveEpicToFile(fromEpicList,
+                    gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID));
 
             fromIssueList = issuesFetcher.fetchAllIssues(
                     gitLabProperties.getProperty(GITLAB_FROM_PATH),
                     gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
-            NotesFetcher.setNotes(fromIssueList,
+            NotesFetcher.NOTES_FETCHER.setIssueNotes(fromIssueList,
                     gitLabProperties.getProperty(GITLAB_FROM_PATH),
                     gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
@@ -107,15 +118,30 @@ public class Fetcher {
             log.error("Error in loading issues - {}", e.getMessage());
         } catch (AuthenticationException e) {
             log.error("Error in loading docs - Password or login to GitLab is incorrect - {}", e.getMessage());
+        } catch (GitLabApiException e) {
+            log.error("Error in loading epics - {}", e.getMessage());
         }
     }
 
-    public static void unloadIssues() {
+    public static void issueImport() {
         try {
             Instant start = Instant.now();
 
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(IMPORT_EPICS))) {
+                List<Epic> epicList = EPICS_FETCHER.loadEpicsDataFromDisk(gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID));
+                EPICS_FETCHER.createEpics(epicList,
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            }
+
             List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk(gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
             List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
+                    gitLabProperties.getProperty(GITLAB_TO_PATH),
+                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+            NotesFetcher.NOTES_FETCHER.setIssueNotes(toIssueList,
                     gitLabProperties.getProperty(GITLAB_TO_PATH),
                     gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
                     gitLabProperties.getProperty(GITLAB_TO_TOKEN));

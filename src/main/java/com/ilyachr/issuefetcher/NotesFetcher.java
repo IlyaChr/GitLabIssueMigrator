@@ -11,12 +11,10 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-public class NotesFetcher {
+public enum NotesFetcher {
+    NOTES_FETCHER;
 
-    private NotesFetcher() {
-    }
-
-    public static void setNotes(List<Issue> issueList, String projectPath, String projectId, String token) {
+    public void setIssueNotes(List<Issue> issueList, String projectPath, String projectId, String token) {
         try (GitLabApi gitLabApi = new GitLabApi(projectPath, token)) {
             NotesApi notesApi = gitLabApi.getNotesApi();
             issueList.parallelStream().forEach(Utils.throwingConsumerWrapper(i -> {
@@ -28,13 +26,23 @@ public class NotesFetcher {
         }
     }
 
-    public static void saveNotes(Issue issue, String projectPath, String projectId, String token) {
+    public void createIssueNotes(Issue issue, String projectPath, String projectId, String token) {
         try (GitLabApi gitLabApi = new GitLabApi(projectPath, token)) {
             NotesApi notesApi = gitLabApi.getNotesApi();
             issue.getNoteList().forEach(Utils.throwingConsumerWrapper(note -> {
                 notesApi.createIssueNote(projectId, issue.getIid().intValue(), note.getBody());
                 log.info("notes of issue : {} successfully created", issue.getIid());
             }, GitLabApiException.class));
+        }
+    }
+
+    //Сначала удаляем старые комментарии потом создаем актуальные
+    public void updateIssueNotes(Issue issue, Issue oldIssue, String projectPath, String projectId, String token) {
+        try (GitLabApi gitLabApi = new GitLabApi(projectPath, token)) {
+            NotesApi notesApi = gitLabApi.getNotesApi();
+            oldIssue.getNoteList().forEach(Utils.throwingConsumerWrapper(note ->
+                    notesApi.deleteIssueNote(projectId, issue.getIid().intValue(), note.getId()), GitLabApiException.class));
+            createIssueNotes(issue, projectPath, projectId, token);
         }
     }
 }
