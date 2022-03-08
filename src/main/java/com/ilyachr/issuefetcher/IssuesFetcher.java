@@ -2,6 +2,7 @@ package com.ilyachr.issuefetcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Issue;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -18,19 +19,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class IssuesFetcher extends Fetching<Issue> {
+public class IssuesFetcher extends RestApi<Issue> {
 
-    public IssuesFetcher() {
+    @Getter
+    private static final IssuesFetcher instance = new IssuesFetcher();
+
+    private IssuesFetcher() {
         super(Issue.class);
     }
 
     public List<Issue> fetchAllIssues(String projectPath, String projectId, String token) throws IOException {
-        return fetchAll(projectPath, projectId, token);
+        return createGetRequest(RestQueryParam.builder().
+                projectPath(projectPath).
+                projectId(projectId).
+                token(token)
+                .build());
     }
 
     @Override
-    public URL getMainUrl(String projectPath, String projectId) throws MalformedURLException {
-        return new URL(projectPath + "/api/v4/projects/" + projectId + "/issues?state=all");
+    public URL getUrl(RestQueryParam queryParam) throws MalformedURLException {
+        return new URL(queryParam.getProjectPath() + "/api/v4/projects/" + queryParam.getProjectId() + "/issues?state=all");
     }
 
     /**
@@ -179,11 +187,15 @@ public class IssuesFetcher extends Fetching<Issue> {
             ObjectMapper objectMapper = new ObjectMapper();
             for (String issueFile : issueFiles) {
                 String docPath = MessageFormat.format(Utils.ISSUE_PATH_TEMPLATE, projectName, path, issueFile);
-                if (issueFile.toLowerCase().contains("issue")) {
-                    List<String> tempDocsPath = issue.getDocsPath();
-                    issue = objectMapper.readValue(new File(docPath), Issue.class);
-                    issue.getDocsPath().addAll(tempDocsPath);
-                    issueList.add(issue);
+                if (issueFile.toLowerCase().endsWith("issue")) {
+                    try {
+                        List<String> tempDocsPath = issue.getDocsPath();
+                        issue = objectMapper.readValue(new File(docPath), Issue.class);
+                        issue.getDocsPath().addAll(tempDocsPath);
+                        issueList.add(issue);
+                    }catch (IOException exception){
+                        throw new IOException();
+                    }
                 } else {
                     issue.addDocPath(docPath);
                 }

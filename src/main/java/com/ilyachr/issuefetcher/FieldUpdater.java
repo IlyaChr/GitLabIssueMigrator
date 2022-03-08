@@ -1,7 +1,6 @@
 package com.ilyachr.issuefetcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -12,14 +11,13 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 @Slf4j
-public enum IssuesUpdater {
-    ISSUES_UPDATER;
+public enum FieldUpdater {
+    FIELD_UPDATER;
 
     @Data
     @Builder
@@ -31,7 +29,7 @@ public enum IssuesUpdater {
         private List<String> labels;
         private String title;
         private String updatedAt;
-        private Integer epicIId;
+        private String epicIId;
     }
 
     public enum IssueState {
@@ -67,7 +65,7 @@ public enum IssuesUpdater {
         LABELS("labels"),
         TITLE("title"),
         UPDATED_DATE("updated_at"),
-        EPIC_ID("epic_id");
+        EPIC_IID("epic_iid");
 
         private String name;
 
@@ -80,19 +78,17 @@ public enum IssuesUpdater {
         }
     }
 
-    public void updateIssue(Issue issue, ParamForUpdate param, String projectPath, String projectId, String token) throws IOException {
-        URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues/" + issue.getIid());
-
-        HttpURLConnection connection = getConnectionForUrl(url, token, param,issue);
+    public void update(URL url, RestApi.RestQueryParam queryParam, ParamForUpdate param) throws IOException {
+        HttpURLConnection connection = getConnectionForUrl(url, queryParam.getToken(), param);
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            log.info("issue: {} successfully updated", issue.getIid());
+            log.info("successfully updated");
         } else {
-            log.error("issue: {}  not updated - responseCode: {} ", issue.getIid(), connection.getResponseCode());
+            log.error("not updated - responseCode: {} ", connection.getResponseCode());
         }
         connection.disconnect();
     }
 
-    public HttpURLConnection getConnectionForUrl(URL url, String token, ParamForUpdate param,Issue issue) throws IOException {
+    public HttpURLConnection getConnectionForUrl(URL url, String token, ParamForUpdate param) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("PUT");
         connection.setRequestProperty("PRIVATE-TOKEN", token);
@@ -106,7 +102,7 @@ public enum IssuesUpdater {
             ObjectMapper objectMapper = new ObjectMapper();
 
 
-            if (!param.getState().getState().isEmpty()) {
+            if (param.getState()!= null && !param.getState().getState().isEmpty()) {
                 addComma(updateRequest).append(getAttributeQuery(Attribute.STATE.getName(), objectMapper.writeValueAsString(param.getState().getAction())));
             }
 
@@ -130,6 +126,10 @@ public enum IssuesUpdater {
                 addComma(updateRequest).append(getAttributeQuery(Attribute.UPDATED_DATE.getName(), objectMapper.writeValueAsString(param.getUpdatedAt())));
             }
 
+            if (!StringUtils.isEmpty(param.getEpicIId())) {
+                addComma(updateRequest).append(getAttributeQuery(Attribute.EPIC_IID.getName(), objectMapper.writeValueAsString(param.getEpicIId())));
+            }
+
             updateRequest.insert(0, "{");
             updateRequest.append("}");
             byte[] input = updateRequest.toString().getBytes(StandardCharsets.UTF_8);
@@ -140,7 +140,7 @@ public enum IssuesUpdater {
     }
 
     private String getAttributeQuery(String key, String value) {
-        return ("\"" + key + "\" : " + value );
+        return ("\"" + key + "\" : " + value);
     }
 
 
@@ -174,7 +174,7 @@ public enum IssuesUpdater {
         return coll == null || coll.isEmpty();
     }
 
-    public StringBuilder addComma(StringBuilder updateRequest){
+    public StringBuilder addComma(StringBuilder updateRequest) {
         if (updateRequest.length() != 0) {
             updateRequest.append(",\n");
         }

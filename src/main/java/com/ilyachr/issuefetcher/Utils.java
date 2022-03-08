@@ -23,14 +23,14 @@ public class Utils {
 
     public static final String ISSUE_PATH_TEMPLATE = "uploads/{0}/{1}/{2}";
 
-    public static final String EPICS_PATH_TEMPLATE = "uploads/{0}/{1}";
+    public static final String EPICS_PATH_TEMPLATE = "uploads/epics/{0}";
 
     public static final String PROPERTIES_FILE_NAME = "config.properties";
 
     private final Map<GitLabEnum, String> gitLabProperties = new EnumMap<>(GitLabEnum.class);
 
     @FunctionalInterface
-    public static interface ThrowingConsumer<T, E extends Exception> {
+    public interface ThrowingConsumer<T, E extends Exception> {
         void accept(T t) throws E;
     }
 
@@ -53,7 +53,8 @@ public class Utils {
 
     public enum GitLabEnum {
         SSL_DISABLE,
-        IMPORT_EPICS,
+        EPICS_ENABLE,
+        ISSUE_ENABLE,
 
         GITLAB_FROM_TOKEN,
         GITLAB_FROM_PATH,
@@ -88,7 +89,8 @@ public class Utils {
                 properties.load(inputStream);
 
                 gitLabProperties.put(GitLabEnum.SSL_DISABLE, properties.getProperty(GitLabEnum.SSL_DISABLE.name()));
-                gitLabProperties.put(GitLabEnum.IMPORT_EPICS, properties.getProperty(GitLabEnum.IMPORT_EPICS.name()));
+                gitLabProperties.put(GitLabEnum.EPICS_ENABLE, properties.getProperty(GitLabEnum.EPICS_ENABLE.name()));
+                gitLabProperties.put(GitLabEnum.ISSUE_ENABLE, properties.getProperty(GitLabEnum.ISSUE_ENABLE.name()));
 
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_TOKEN, properties.getProperty(GitLabEnum.GITLAB_FROM_TOKEN.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()));
@@ -146,7 +148,7 @@ public class Utils {
             // Install the all-trusting host verifier
             HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 

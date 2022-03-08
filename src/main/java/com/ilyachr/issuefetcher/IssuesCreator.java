@@ -1,13 +1,12 @@
 package com.ilyachr.issuefetcher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Assignee;
 import com.ilyachr.issuefetcher.jackson.Issue;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,11 +18,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.ilyachr.issuefetcher.IssuesUpdater.*;
-import static com.ilyachr.issuefetcher.NotesFetcher.NOTES_FETCHER;
+import static com.ilyachr.issuefetcher.FieldUpdater.*;
 
 @Slf4j
-public class IssuesCreator {
+public class IssuesCreator extends RestApi<Issue> {
+
+    @Getter
+    private static final IssuesCreator instance = new IssuesCreator();
+
+    private IssuesCreator() {
+        super(Issue.class);
+    }
+
     public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, Map<String, Integer> usersIds, String projectPath, String projectId, String token) {
 
         Map<Long, Issue> toIssuesMap = toIssues.stream().collect(Collectors.toMap(Issue::getIid, issue -> issue));
@@ -44,20 +50,71 @@ public class IssuesCreator {
         }, IOException.class));
     }
 
-    public HttpURLConnection getConnectionForUrl(URL url, String token, Issue issue) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("PRIVATE-TOKEN", token);
-        connection.setRequestProperty("Content-Type", "application/json; utf-8");
-        connection.setRequestProperty("Accept", "application/json");
-        connection.setDoOutput(true);
-        ObjectMapper objectMapper = new ObjectMapper();
-        try (OutputStream os = connection.getOutputStream()) {
-            byte[] input = objectMapper.writeValueAsBytes(issue);
-            os.write(input, 0, input.length);
-        }
-        return connection;
+    @Override
+    public URL getUrl(RestQueryParam queryParam) throws MalformedURLException {
+        return queryParam.getIssueIid() == null ?
+                new URL(queryParam.getProjectPath() + "/api/v4/projects/" + queryParam.getProjectId() + "/issues") :
+                new URL(queryParam.getProjectPath() + "/api/v4/projects/" + queryParam.getProjectId() + "/issues/" + queryParam.getIssueIid());
     }
+
+    private void createNewIssue(Issue issue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) {
+        createPostRequest(issue,
+                RestQueryParam.builder().
+                        projectPath(projectPath).
+                        projectId(projectId).
+                        token(token).
+                        build(),
+                Utils.throwingConsumerWrapper(i -> {
+
+                    RestQueryParam queryParam = RestQueryParam.builder().
+                            projectPath(projectPath).
+                            projectId(projectId).
+                            token(token).
+                            issueIid(i.getIid().toString()).
+                            build();
+
+                    NotesFactory.getInstance().createIssueNotes(issue, projectPath, projectId, token);
+                    List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
+                    FIELD_UPDATER.update(
+                            getUrl(queryParam),
+                            queryParam,
+                            ParamForUpdate.builder().
+                                    issueIid(issue.getIid()).
+                                    assigneeIds(newAssigneeIds).
+                                    state(IssueState.getIssueState(issue.getState())).
+                                    updatedAt(issue.getUpdated_at())
+                                    .build());
+                }, IOException.class));
+    }
+
+    private void updateIssue(Issue issue, Issue oldIssue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
+        if (LocalDateTime.parse(issue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                .isAfter(LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME))) {
+            NotesFactory.getInstance().updateIssueNotes(issue, oldIssue, projectPath, projectId, token);
+            List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
+
+            RestQueryParam queryParam = RestQueryParam.builder().
+                    projectPath(projectPath).
+                    projectId(projectId).
+                    token(token).
+                    issueIid(issue.getIid().toString()).
+                    build();
+
+            FIELD_UPDATER.update(
+                    getUrl(queryParam),
+                    queryParam,
+                    ParamForUpdate.builder().
+                            issueIid(issue.getIid()).
+                            assigneeIds(newAssigneeIds).
+                            state(IssueState.getIssueState(issue.getState())).
+                            description(issue.getDescription()).
+                            title(issue.getTitle()).
+                            labels(Arrays.asList(issue.getLabels())).
+                            updatedAt(issue.getUpdated_at()).
+                            build());
+        }
+    }
+
 
     private List<Integer> getNewAssigneeIdsForIssue(Issue issue, Map<String, Integer> usersIds) {
         List<Integer> newAssigneeIds = new ArrayList<>();
@@ -67,55 +124,6 @@ public class IssuesCreator {
             }
         }
         return newAssigneeIds;
-    }
-
-
-    private void updateIssue(Issue issue, Issue oldIssue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
-        if (LocalDateTime.parse(issue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                .isAfter(LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME))) {
-            NOTES_FETCHER.updateIssueNotes(issue, oldIssue, projectPath, projectId, token);
-            List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
-            ISSUES_UPDATER.updateIssue(
-                    issue,
-                    ParamForUpdate.builder().
-                            issueIid(issue.getIid()).
-                            assigneeIds(newAssigneeIds).
-                            state(IssueState.getIssueState(issue.getState())).
-                            description(issue.getDescription()).
-                            title(issue.getTitle()).
-                            labels(Arrays.asList(issue.getLabels())).
-                            updatedAt(issue.getUpdated_at()).
-                            build(),
-                    projectPath,
-                    projectId,
-                    token);
-        }
-    }
-
-    private void createNewIssue(Issue issue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
-        URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues");
-        HttpURLConnection connection = getConnectionForUrl(url, token, issue);
-
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-            log.info("issue: {} successfully created", issue.getIid());
-            NOTES_FETCHER.createIssueNotes(issue, projectPath, projectId, token);
-            List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
-            ISSUES_UPDATER.updateIssue(
-                    issue,
-                    ParamForUpdate.builder().
-                            issueIid(issue.getIid()).
-                            assigneeIds(newAssigneeIds).
-                            state(IssueState.getIssueState(issue.getState())).
-                            updatedAt(issue.getUpdated_at())
-                            .build(),
-                    projectPath,
-                    projectId,
-                    token
-            );
-        } else {
-            log.error("issue: {}  not created - responseCode: {}", issue.getIid(), connection.getResponseCode());
-        }
-        connection.disconnect();
     }
 
 

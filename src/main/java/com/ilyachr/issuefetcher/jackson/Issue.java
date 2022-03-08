@@ -5,11 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.gitlab4j.api.models.Note;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,7 +46,8 @@ public class Issue {
     private Boolean hasTasks;
     private String taskStatus;
     private TaskCompletionStatus taskCompletionStatus;
-    private Integer epic_iid;
+    // не работает если нет соответствующего epic
+    //private Integer epic_iid;
 
     private List<String> docsPath;
 

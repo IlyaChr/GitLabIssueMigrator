@@ -1,9 +1,9 @@
 package com.ilyachr.issuefetcher;
 
+import com.ilyachr.issuefetcher.jackson.Epic;
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
-import org.gitlab4j.api.GitLabApiException;
-import org.gitlab4j.api.models.Epic;
+
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import static com.ilyachr.issuefetcher.EpicsFetcher.EPICS_FETCHER;
 import static com.ilyachr.issuefetcher.Utils.GitLabEnum.*;
 
 
@@ -21,10 +20,6 @@ import static com.ilyachr.issuefetcher.Utils.GitLabEnum.*;
 public class Fetcher {
 
     private static Utils gitLabProperties;
-    private static final IssuesFetcher issuesFetcher = new IssuesFetcher();
-    private static final IssuesDeleter issuesDeleter = new IssuesDeleter();
-    private static final IssuesCreator issuesCreator = new IssuesCreator();
-    private static final UsersFetcher usersFetcher = new UsersFetcher();
 
     public static void main(String[] args) {
 
@@ -67,7 +62,7 @@ public class Fetcher {
                 case ("erase"):
                     log.info("Are you sure ? Confirm this by type \"Yes\"");
                     if (scanner.nextLine().equalsIgnoreCase("yes")) {
-                        deleteIssues();
+                        eraseAll();
                     }
                     break;
                 case ("q"):
@@ -83,43 +78,48 @@ public class Fetcher {
         try {
             Instant start = Instant.now();
 
-            fromEpicList = EPICS_FETCHER.fetchEpics(
-                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
-                    gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(EPICS_ENABLE))) {
+                fromEpicList = EpicsFactory.getInstance().fetchEpics(
+                        gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                        gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID),
+                        gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
-            EPICS_FETCHER.saveEpicToFile(fromEpicList,
-                    gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID));
+                EpicsFactory.getInstance().saveEpicToFile(fromEpicList);
 
-            fromIssueList = issuesFetcher.fetchAllIssues(
-                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
-                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+                log.debug("Total epics fetched : {} ", fromEpicList.size());
+            }
 
-            NotesFetcher.NOTES_FETCHER.setIssueNotes(fromIssueList,
-                    gitLabProperties.getProperty(GITLAB_FROM_PATH),
-                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(ISSUE_ENABLE))) {
+                fromIssueList = IssuesFetcher.getInstance().fetchAllIssues(
+                        gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                        gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
-            issuesFetcher.saveIssueToFile(fromIssueList, gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                NotesFactory.getInstance().setIssueNotes(fromIssueList,
+                        gitLabProperties.getProperty(GITLAB_FROM_PATH),
+                        gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
 
-            issuesFetcher.saveIssueUploads(fromIssueList,
-                    gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
-                    gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
-                    gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
-                    gitLabProperties.getProperty(GITLAB_FROM_PASSWORD),
-                    gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH),
-                    gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                IssuesFetcher.getInstance().saveIssueToFile(fromIssueList, gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+
+                IssuesFetcher.getInstance().saveIssueUploads(fromIssueList,
+                        gitLabProperties.getProperty(GITLAB_FROM_LOGIN_FORM_URL),
+                        gitLabProperties.getProperty(GITLAB_FROM_LOGIN_ACTION_URL),
+                        gitLabProperties.getProperty(GITLAB_FROM_USERNAME),
+                        gitLabProperties.getProperty(GITLAB_FROM_PASSWORD),
+                        gitLabProperties.getProperty(GITLAB_FROM_PROJECT_PATH),
+                        gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+
+                log.debug("Total issues fetched : {} ", fromIssueList.size());
+            }
+
 
             Instant finish = Instant.now();
             log.debug("Elapsed Time in seconds: {} ", Duration.between(start, finish).getSeconds());
-            log.debug("Total issues fetched : {} ", fromIssueList.size());
         } catch (IOException e) {
-            log.error("Error in loading issues - {}", e.getMessage());
+            log.error("Error in export: {}", e.getMessage());
         } catch (AuthenticationException e) {
             log.error("Error in loading docs - Password or login to GitLab is incorrect - {}", e.getMessage());
-        } catch (GitLabApiException e) {
-            log.error("Error in loading epics - {}", e.getMessage());
         }
     }
 
@@ -127,33 +127,41 @@ public class Fetcher {
         try {
             Instant start = Instant.now();
 
-            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(IMPORT_EPICS))) {
-                List<Epic> epicList = EPICS_FETCHER.loadEpicsDataFromDisk(gitLabProperties.getProperty(GITLAB_FROM_GROUP_ID));
-                EPICS_FETCHER.createEpics(epicList,
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(EPICS_ENABLE))) {
+                List<Epic> fromEpicList = EpicsFactory.getInstance().loadEpicsDataFromDisk();
+
+                List<Epic> toEpicList = EpicsFactory.getInstance().fetchEpics(
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+                EpicsFactory.getInstance().createEpics(fromEpicList,toEpicList,
                         gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
                         gitLabProperties.getProperty(GITLAB_TO_TOKEN));
             }
 
-            List<Issue> fromIssueList = issuesFetcher.loadIssueDataFromDisk(gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
-            List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
-                    gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(ISSUE_ENABLE))) {
+                List<Issue> fromIssueList = IssuesFetcher.getInstance().loadIssueDataFromDisk(gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
+                List<Issue> toIssueList = IssuesFetcher.getInstance().fetchAllIssues(
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            NotesFetcher.NOTES_FETCHER.setIssueNotes(toIssueList,
-                    gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                NotesFactory.getInstance().setIssueNotes(toIssueList,
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            Map<String, Integer> usersIds = usersFetcher.getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                Map<String, Integer> usersIds = UsersFetcher.getInstance().getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            issuesCreator.createIssues(fromIssueList, toIssueList, usersIds,
-                    gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                IssuesCreator.getInstance().createIssues(fromIssueList, toIssueList, usersIds,
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            }
 
             Instant finish = Instant.now();
             log.debug("Elapsed Time in seconds: {}", Duration.between(start, finish).getSeconds());
@@ -163,17 +171,34 @@ public class Fetcher {
         }
     }
 
-    public static void deleteIssues() {
+    public static void eraseAll() {
         try {
-            List<Issue> toIssueList = issuesFetcher.fetchAllIssues(
-                    gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(ISSUE_ENABLE))) {
+                List<Issue> toIssueList = IssuesFetcher.getInstance().fetchAllIssues(
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-            issuesDeleter.deleteIssues(toIssueList,
-                    gitLabProperties.getProperty(GITLAB_TO_PATH),
-                    gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                    gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                IssuesDeleter.getInstance().deleteIssues(toIssueList,
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            }
+
+
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(EPICS_ENABLE))) {
+                List<Epic> toEpicList = EpicsFactory.getInstance().fetchEpics(
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+
+                EpicsFactory.getInstance().deleteEpics(toEpicList,
+                        gitLabProperties.getProperty(GITLAB_TO_PATH),
+                        gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+            }
+
+
         } catch (IOException e) {
             log.error("Error in delete issues - {}", e.getMessage());
         }

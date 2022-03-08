@@ -1,38 +1,34 @@
 package com.ilyachr.issuefetcher;
 
 import com.ilyachr.issuefetcher.jackson.Issue;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
 @Slf4j
-public class IssuesDeleter {
+public class IssuesDeleter extends RestApi<Issue> {
 
+    @Getter
+    private static final IssuesDeleter instance = new IssuesDeleter();
+
+    private IssuesDeleter() {
+        super(Issue.class);
+    }
+
+    @Override
+    public URL getUrl(RestQueryParam queryParam) throws MalformedURLException {
+        return new URL(queryParam.getProjectPath() + "/api/v4/projects/" + queryParam.getProjectId() + "/issues/" + queryParam.getIssueIid());
+    }
 
     public void deleteIssues(List<Issue> issues, String projectPath, String projectId, String token) {
-        issues.stream().parallel().forEach(Utils.throwingConsumerWrapper(i -> deleteIssue(projectPath, projectId, token, i.getIid()), IOException.class));
+        issues.stream().parallel().forEach(issue -> createDeleteRequest(RestQueryParam.builder().
+                projectPath(projectPath).
+                projectId(projectId).
+                issueIid(issue.getIid().toString()).
+                token(token).
+                build()));
     }
-
-    public void deleteIssue(String projectPath, String projectId, String token, Long issueIid) throws IOException {
-        URL url = new URL(projectPath + "/api/v4/projects/" + projectId + "/issues/" + issueIid);
-        HttpURLConnection connection = getConnectionForUrl(url, token);
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT) {
-            log.info("issue: {} successfully deleted", issueIid);
-        } else {
-            log.error("issue: {}  not deleted - responseCode: {}", issueIid, connection.getResponseCode());
-        }
-        connection.disconnect();
-    }
-
-    public HttpURLConnection getConnectionForUrl(URL url, String token) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("DELETE");
-        connection.setRequestProperty("PRIVATE-TOKEN", token);
-        connection.setRequestProperty("Accept", "application/json");
-        return connection;
-    }
-
 }
