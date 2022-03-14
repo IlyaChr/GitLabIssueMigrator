@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +33,7 @@ public class Fetcher {
                 if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(SSL_DISABLE))) {
                     gitLabProperties.disableSslVerification();
                 }
-            } catch (IOException exception) {
+            } catch (IOException | URISyntaxException exception) {
                 log.error("Error in config file");
                 return;
             }

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,6 +26,11 @@ public class IssuesCreator extends RestApi<Issue> {
 
     @Getter
     private static final IssuesCreator instance = new IssuesCreator();
+
+    @Getter
+    private AtomicInteger countUpdated = new AtomicInteger(0);
+    @Getter
+    private AtomicInteger countCreated = new AtomicInteger(0);
 
     private IssuesCreator() {
         super(Issue.class);
@@ -48,6 +54,9 @@ public class IssuesCreator extends RestApi<Issue> {
             }
 
         }, IOException.class));
+
+        log.info("Total created issue : " + countCreated.get());
+        log.info("Total updated issue : " + countUpdated.get());
     }
 
     @Override
@@ -84,6 +93,9 @@ public class IssuesCreator extends RestApi<Issue> {
                                     state(IssueState.getIssueState(issue.getState())).
                                     updatedAt(issue.getUpdated_at())
                                     .build());
+
+                    getCountCreated().incrementAndGet();
+
                 }, IOException.class));
     }
 
@@ -112,6 +124,8 @@ public class IssuesCreator extends RestApi<Issue> {
                             labels(Arrays.asList(issue.getLabels())).
                             updatedAt(issue.getUpdated_at()).
                             build());
+
+            getCountUpdated().incrementAndGet();
         }
     }
 

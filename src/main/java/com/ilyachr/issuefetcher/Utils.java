@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -76,13 +77,16 @@ public class Utils {
     }
 
 
-    public Utils() throws FileNotFoundException {
+    public Utils() throws FileNotFoundException, URISyntaxException {
         readProperties();
     }
 
-    private void readProperties() throws FileNotFoundException {
+    private void readProperties() throws FileNotFoundException, URISyntaxException {
         Properties properties = new Properties();
-        File file = new File("../" + PROPERTIES_FILE_NAME);
+
+        File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+        File file = new File(jarFile.getParent() + "/\\\\" + PROPERTIES_FILE_NAME);
+
         try (InputStream inputStream = (file.exists()) ? new FileInputStream(file) : getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME)) {
 
             if (inputStream != null) {

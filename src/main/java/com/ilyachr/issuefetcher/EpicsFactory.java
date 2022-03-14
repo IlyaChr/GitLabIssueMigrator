@@ -43,7 +43,7 @@ public class EpicsFactory extends RestApi<Epic> {
     public void createEpics(List<Epic> fromEpicList, List<Epic> toEpicList, String projectPath, String groupId, String token) {
         Map<Integer, Epic> toEpicMap = toEpicList.stream().collect(Collectors.toMap(Epic::getIid, epic -> epic));
 
-        fromEpicList.parallelStream().forEach(Utils.throwingConsumerWrapper(epic -> {
+        fromEpicList.forEach(Utils.throwingConsumerWrapper(epic -> {
             //создаем epic если такого epic не было
             if (!toEpicMap.containsKey(epic.getIid())) {
                 createNewEpic(epic, projectPath, groupId, token);
