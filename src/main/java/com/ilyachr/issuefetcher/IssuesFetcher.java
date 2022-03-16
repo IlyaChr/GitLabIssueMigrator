@@ -153,6 +153,7 @@ public class IssuesFetcher extends RestApi<Issue> {
                 .cookies(cookies)
                 .ignoreContentType(true)
                 .maxBodySize(0)
+                .timeout(240000)
                 .method(Connection.Method.GET)
                 .userAgent(Utils.USER_AGENT).execute();
 
