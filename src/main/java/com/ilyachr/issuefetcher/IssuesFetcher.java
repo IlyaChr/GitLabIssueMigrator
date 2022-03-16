@@ -152,6 +152,7 @@ public class IssuesFetcher extends RestApi<Issue> {
         Connection.Response testResponse = Jsoup.connect(uploadLink)
                 .cookies(cookies)
                 .ignoreContentType(true)
+                .maxBodySize(0)
                 .method(Connection.Method.GET)
                 .userAgent(Utils.USER_AGENT).execute();
 
