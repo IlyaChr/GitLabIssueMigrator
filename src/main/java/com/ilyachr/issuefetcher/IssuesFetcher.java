@@ -7,12 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import javax.naming.AuthenticationException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -120,15 +123,26 @@ public class IssuesFetcher extends RestApi<Issue> {
 
         Document loginDoc = loginForm.parse();
 
-        String authToken = Objects.requireNonNull(loginDoc.select("#new_user > input[type=hidden]:nth-child(2)")
-                        .first())
-                .attr("value");
+        Elements element = loginDoc.select("#new_ldap_user > input[type=hidden]:nth-child(2)").size() != 0 ?
+                loginDoc.select("#new_user > input[type=hidden]:nth-child(2)") :
+                loginDoc.select("#new_ldap_user > input[type=hidden]");
+
+        if (element.size() == 0) {
+            throw new AuthenticationException("Can not find login page");
+        }
+
+        String authToken = element.first().attr("value");
 
         formData.put("utf8", "e2 9c 93");
+        formData.put("authenticity_token", authToken);
+
         formData.put("user[login]", userName);
         formData.put("user[password]", password);
-        formData.put("authenticity_token", authToken);
         formData.put("user[remember_me]", "1");
+
+        formData.put("username", userName);
+        formData.put("password", password);
+        formData.put("remember_me", "1");
 
         Connection.Response signIn = Jsoup.connect(actionUrl)
                 .cookies(loginForm.cookies())
@@ -136,8 +150,8 @@ public class IssuesFetcher extends RestApi<Issue> {
                 .method(Connection.Method.POST)
                 .userAgent(Utils.USER_AGENT)
                 .execute();
-
-        if (signIn.statusCode() == HttpURLConnection.HTTP_OK && signIn.method().name().equals("GET")) {
+        signIn.cookies().put("known_sign_in", URLDecoder.decode(signIn.cookies().get("known_sign_in"), StandardCharsets.UTF_8.name()));
+        if (signIn.statusCode() == HttpURLConnection.HTTP_OK || signIn.statusCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
             return signIn.cookies();
         }
         throw new AuthenticationException("user[login] : " + userName + " \t user[password] : " + password);
@@ -153,7 +167,7 @@ public class IssuesFetcher extends RestApi<Issue> {
                 .cookies(cookies)
                 .ignoreContentType(true)
                 .maxBodySize(0)
-                .timeout(240000)
+                .timeout(200000)
                 .method(Connection.Method.GET)
                 .userAgent(Utils.USER_AGENT).execute();
 
@@ -195,7 +209,7 @@ public class IssuesFetcher extends RestApi<Issue> {
                         issue = objectMapper.readValue(new File(docPath), Issue.class);
                         issue.getDocsPath().addAll(tempDocsPath);
                         issueList.add(issue);
-                    }catch (IOException exception){
+                    } catch (IOException exception) {
                         throw new IOException();
                     }
                 } else {
