@@ -86,7 +86,7 @@ public abstract class RestApi<T> {
                 list.addAll(objectMapper.readValue(response.toString(), listType));
 
             } else {
-                log.error("Failed to create GET request with status {}", connection.getResponseCode());
+                log.error("Failed to create GET request with status {} and param {}", connection.getResponseCode(), queryParam);
             }
             connection.disconnect();
 
@@ -102,7 +102,7 @@ public abstract class RestApi<T> {
             if (connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
                 afterSuccessConsumer.accept(object);
             } else {
-                log.error("Failed to create POST request with status {}", connection.getResponseCode());
+                log.error("Failed to create POST request with status {} and param {}", connection.getResponseCode(), queryParam);
             }
             connection.disconnect();
         } catch (IOException e) {
@@ -115,7 +115,7 @@ public abstract class RestApi<T> {
         try {
             connection = getDeleteQuery(queryParam);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_NO_CONTENT) {
-                log.error("Failed to create DELETE request with status {}", connection.getResponseCode());
+                log.error("Failed to create DELETE request with status {} and param {}", connection.getResponseCode(), queryParam);
             }
             connection.disconnect();
         } catch (IOException e) {
@@ -128,7 +128,7 @@ public abstract class RestApi<T> {
         try {
             connection = getPutQuery(queryParam, object);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                log.error("Failed to create PUT request with status {}", connection.getResponseCode());
+                log.error("Failed to create PUT request with status {} and param {}", connection.getResponseCode(), queryParam);
             }
             connection.disconnect();
         } catch (IOException e) {

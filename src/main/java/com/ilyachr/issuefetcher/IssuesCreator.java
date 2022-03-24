@@ -100,8 +100,11 @@ public class IssuesCreator extends RestApi<Issue> {
     }
 
     private void updateIssue(Issue issue, Issue oldIssue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
-        if (LocalDateTime.parse(issue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                .isAfter(LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME))) {
+
+        LocalDateTime newIssueUpdatedTime = LocalDateTime.parse(issue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        LocalDateTime oldIssueUpdatedTime = LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        if (!oldIssueUpdatedTime.isAfter(newIssueUpdatedTime)) {
             NotesFactory.getInstance().updateIssueNotes(issue, oldIssue, projectPath, projectId, token);
             List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
 
