@@ -42,9 +42,6 @@ public class IssuesCreator extends RestApi<Issue> {
 
         fromIssues.parallelStream().forEach(Utils.throwingConsumerWrapper(issue -> {
 
-            //загружаем вложения и обновляем на них ссылки
-            updateDescription(issue, projectPath, projectId, token);
-
             //создаем issue если такого issue не было
             if (!toIssuesMap.containsKey(issue.getIid())) {
                 createNewIssue(issue, usersIds, projectPath, projectId, token);
@@ -66,27 +63,21 @@ public class IssuesCreator extends RestApi<Issue> {
                 new URL(queryParam.getProjectPath() + "/api/v4/projects/" + queryParam.getProjectId() + "/issues/" + queryParam.getIssueIid());
     }
 
-    private void createNewIssue(Issue issue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) {
+    private void createNewIssue(Issue issue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
+
+        //загружаем вложения и обновляем на них ссылки
+        updateDescription(issue, projectPath, projectId, token);
+
         createPostRequest(issue,
-                RestQueryParam.builder().
-                        projectPath(projectPath).
-                        projectId(projectId).
-                        token(token).
-                        build(),
+                RestQueryParam.builder().projectPath(projectPath).projectId(projectId).token(token).build(),
                 Utils.throwingConsumerWrapper(i -> {
 
-                    RestQueryParam queryParam = RestQueryParam.builder().
-                            projectPath(projectPath).
-                            projectId(projectId).
-                            token(token).
-                            issueIid(i.getIid().toString()).
-                            build();
+                    RestQueryParam queryParam = RestQueryParam.builder().projectPath(projectPath).projectId(projectId).token(token).issueIid(i.getIid().toString()).build();
 
                     NotesFactory.getInstance().createIssueNotes(issue, projectPath, projectId, token);
                     List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
                     FIELD_UPDATER.update(
-                            getUrl(queryParam),
-                            queryParam,
+                            getUrl(queryParam), queryParam,
                             ParamForUpdate.builder().
                                     issueIid(issue.getIid()).
                                     assigneeIds(newAssigneeIds).
@@ -105,19 +96,17 @@ public class IssuesCreator extends RestApi<Issue> {
         LocalDateTime oldIssueUpdatedTime = LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
         if (!oldIssueUpdatedTime.isAfter(newIssueUpdatedTime)) {
+
+            //загружаем вложения и обновляем на них ссылки
+            updateDescription(issue, projectPath, projectId, token);
+
             NotesFactory.getInstance().updateIssueNotes(issue, oldIssue, projectPath, projectId, token);
             List<Integer> newAssigneeIds = getNewAssigneeIdsForIssue(issue, usersIds);
 
-            RestQueryParam queryParam = RestQueryParam.builder().
-                    projectPath(projectPath).
-                    projectId(projectId).
-                    token(token).
-                    issueIid(issue.getIid().toString()).
-                    build();
+            RestQueryParam queryParam = RestQueryParam.builder().projectPath(projectPath).projectId(projectId).token(token).issueIid(issue.getIid().toString()).build();
 
             FIELD_UPDATER.update(
-                    getUrl(queryParam),
-                    queryParam,
+                    getUrl(queryParam), queryParam,
                     ParamForUpdate.builder().
                             issueIid(issue.getIid()).
                             assigneeIds(newAssigneeIds).

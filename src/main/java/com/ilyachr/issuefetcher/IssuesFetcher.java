@@ -150,7 +150,12 @@ public class IssuesFetcher extends RestApi<Issue> {
                 .method(Connection.Method.POST)
                 .userAgent(Utils.USER_AGENT)
                 .execute();
-        signIn.cookies().put("known_sign_in", URLDecoder.decode(signIn.cookies().get("known_sign_in"), StandardCharsets.UTF_8.name()));
+
+        String knownSignIn = signIn.cookies().get("known_sign_in");
+        if (knownSignIn != null){
+            signIn.cookies().put("known_sign_in", URLDecoder.decode(knownSignIn, StandardCharsets.UTF_8.name()));
+        }
+
         if (signIn.statusCode() == HttpURLConnection.HTTP_OK || signIn.statusCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
             return signIn.cookies();
         }

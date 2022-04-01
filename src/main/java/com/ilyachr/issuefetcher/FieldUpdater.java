@@ -81,9 +81,9 @@ public enum FieldUpdater {
     public void update(URL url, RestApi.RestQueryParam queryParam, ParamForUpdate param) throws IOException {
         HttpURLConnection connection = getConnectionForUrl(url, queryParam.getToken(), param);
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            log.info("successfully updated");
+            log.info("successfully updated: with param {}", queryParam);
         } else {
-            log.error("not updated - responseCode: {} ", connection.getResponseCode());
+            log.error("not updated - responseCode: {} and param {}", connection.getResponseCode() , queryParam);
         }
         connection.disconnect();
     }
