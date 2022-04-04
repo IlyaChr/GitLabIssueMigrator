@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.ilyachr.issuefetcher.FieldUpdater.*;
 
@@ -36,11 +37,13 @@ public class IssuesCreator extends RestApi<Issue> {
         super(Issue.class);
     }
 
-    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, Map<String, Integer> usersIds, String projectPath, String projectId, String token) {
+    public void createIssues(List<Issue> fromIssues, List<Issue> toIssues, Map<String, Integer> usersIds, String projectPath, String projectId, String token, boolean isParallel) {
 
         Map<Long, Issue> toIssuesMap = toIssues.stream().collect(Collectors.toMap(Issue::getIid, issue -> issue));
 
-        fromIssues.parallelStream().forEach(Utils.throwingConsumerWrapper(issue -> {
+        Stream<Issue> fromIssuesStream = isParallel ? fromIssues.parallelStream() : fromIssues.stream();
+
+        fromIssuesStream.forEach(Utils.throwingConsumerWrapper(issue -> {
 
             //создаем issue если такого issue не было
             if (!toIssuesMap.containsKey(issue.getIid())) {

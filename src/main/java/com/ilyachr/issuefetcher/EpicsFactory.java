@@ -2,6 +2,7 @@ package com.ilyachr.issuefetcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Epic;
+import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class EpicsFactory extends RestApi<Epic> {
@@ -89,8 +91,9 @@ public class EpicsFactory extends RestApi<Epic> {
     }
 
 
-    public void deleteEpics(List<Epic> epicList, String projectPath, String groupId, String token) {
-        epicList.parallelStream().forEach(epic -> createDeleteRequest(
+    public void deleteEpics(List<Epic> epicList, String projectPath, String groupId, String token, boolean isParallel) {
+        Stream<Epic> epicListStream = isParallel ? epicList.parallelStream() : epicList.stream();
+        epicListStream.forEach(epic -> createDeleteRequest(
                 RestQueryParam.builder().
                         projectPath(projectPath).
                         groupId(groupId).

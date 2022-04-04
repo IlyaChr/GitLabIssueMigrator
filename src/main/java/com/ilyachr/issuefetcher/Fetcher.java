@@ -4,7 +4,6 @@ import com.ilyachr.issuefetcher.jackson.Epic;
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.extern.slf4j.Slf4j;
 
-
 import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -99,7 +98,8 @@ public class Fetcher {
                 NotesFactory.getInstance().setIssueNotes(fromIssueList,
                         gitLabProperties.getProperty(GITLAB_FROM_PATH),
                         gitLabProperties.getProperty(GITLAB_FROM_PROJECT_ID),
-                        gitLabProperties.getProperty(GITLAB_FROM_TOKEN));
+                        gitLabProperties.getProperty(GITLAB_FROM_TOKEN),
+                        "TRUE".equalsIgnoreCase(gitLabProperties.getProperty(PARALLEL_MODE)));
 
                 IssuesFetcher.getInstance().saveIssueToFile(fromIssueList, gitLabProperties.getProperty(GITLAB_PROJECT_NAME));
 
@@ -136,7 +136,7 @@ public class Fetcher {
                         gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
                         gitLabProperties.getProperty(GITLAB_TO_TOKEN));
 
-                EpicsFactory.getInstance().createEpics(fromEpicList,toEpicList,
+                EpicsFactory.getInstance().createEpics(fromEpicList, toEpicList,
                         gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
                         gitLabProperties.getProperty(GITLAB_TO_TOKEN));
@@ -152,7 +152,8 @@ public class Fetcher {
                 NotesFactory.getInstance().setIssueNotes(toIssueList,
                         gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN),
+                        "TRUE".equalsIgnoreCase(gitLabProperties.getProperty(PARALLEL_MODE)));
 
                 Map<String, Integer> usersIds = UsersFetcher.getInstance().getAllUsers(gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
@@ -161,7 +162,8 @@ public class Fetcher {
                 IssuesCreator.getInstance().createIssues(fromIssueList, toIssueList, usersIds,
                         gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_PROJECT_ID),
-                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN),
+                        "TRUE".equalsIgnoreCase(gitLabProperties.getProperty(PARALLEL_MODE)));
             }
 
             Instant finish = Instant.now();
@@ -196,7 +198,8 @@ public class Fetcher {
                 EpicsFactory.getInstance().deleteEpics(toEpicList,
                         gitLabProperties.getProperty(GITLAB_TO_PATH),
                         gitLabProperties.getProperty(GITLAB_TO_GROUP_ID),
-                        gitLabProperties.getProperty(GITLAB_TO_TOKEN));
+                        gitLabProperties.getProperty(GITLAB_TO_TOKEN),
+                        "TRUE".equalsIgnoreCase(gitLabProperties.getProperty(PARALLEL_MODE)));
             }
 
 

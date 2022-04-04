@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 public class NotesFactory extends RestApi<Note> {
@@ -29,8 +30,9 @@ public class NotesFactory extends RestApi<Note> {
     }
 
 
-    public void setIssueNotes(List<Issue> issueList, String projectPath, String projectId, String token) {
-        issueList.parallelStream().forEach(Utils.throwingConsumerWrapper(i -> {
+    public void setIssueNotes(List<Issue> issueList, String projectPath, String projectId, String token, boolean isParallel) {
+        Stream<Issue> issueListStream = isParallel ? issueList.parallelStream() : issueList.stream();
+        issueListStream.forEach(Utils.throwingConsumerWrapper(i -> {
             List<Note> noteList = createGetRequest(RestQueryParam.builder().
                     projectPath(projectPath).
                     projectId(projectId).

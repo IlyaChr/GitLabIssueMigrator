@@ -56,6 +56,7 @@ public class Utils {
         SSL_DISABLE,
         EPICS_ENABLE,
         ISSUE_ENABLE,
+        PARALLEL_MODE,
 
         GITLAB_FROM_TOKEN,
         GITLAB_FROM_PATH,
@@ -95,6 +96,8 @@ public class Utils {
                 gitLabProperties.put(GitLabEnum.SSL_DISABLE, properties.getProperty(GitLabEnum.SSL_DISABLE.name()));
                 gitLabProperties.put(GitLabEnum.EPICS_ENABLE, properties.getProperty(GitLabEnum.EPICS_ENABLE.name()));
                 gitLabProperties.put(GitLabEnum.ISSUE_ENABLE, properties.getProperty(GitLabEnum.ISSUE_ENABLE.name()));
+                gitLabProperties.put(GitLabEnum.PARALLEL_MODE, properties.getProperty(GitLabEnum.PARALLEL_MODE.name()));
+
 
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_TOKEN, properties.getProperty(GitLabEnum.GITLAB_FROM_TOKEN.name()));
                 gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()));
