@@ -95,7 +95,7 @@ public class IssuesCreator extends RestApi<Issue> {
         LocalDateTime newIssueUpdatedTime = LocalDateTime.parse(issue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         LocalDateTime oldIssueUpdatedTime = LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
-        if (!oldIssueUpdatedTime.isAfter(newIssueUpdatedTime)) {
+        if (newIssueUpdatedTime.isAfter(oldIssueUpdatedTime)) {
 
             //загружаем вложения и обновляем на них ссылки
             updateDescription(issue, projectPath, projectId, token);
