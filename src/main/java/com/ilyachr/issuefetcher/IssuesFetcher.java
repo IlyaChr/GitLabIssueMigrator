@@ -123,11 +123,11 @@ public class IssuesFetcher extends RestApi<Issue> {
 
         Document loginDoc = loginForm.parse();
 
-        Elements element = loginDoc.select("#new_ldap_user > input[type=hidden]:nth-child(2)").size() != 0 ?
+        Elements element = loginDoc.select("#new_ldap_user > input[type=hidden]").isEmpty() ?
                 loginDoc.select("#new_user > input[type=hidden]:nth-child(2)") :
                 loginDoc.select("#new_ldap_user > input[type=hidden]");
 
-        if (element.size() == 0) {
+        if (element.isEmpty()) {
             throw new AuthenticationException("Can not find login page");
         }
 
@@ -152,7 +152,7 @@ public class IssuesFetcher extends RestApi<Issue> {
                 .execute();
 
         String knownSignIn = signIn.cookies().get("known_sign_in");
-        if (knownSignIn != null){
+        if (knownSignIn != null) {
             signIn.cookies().put("known_sign_in", URLDecoder.decode(knownSignIn, StandardCharsets.UTF_8.name()));
         }
 
