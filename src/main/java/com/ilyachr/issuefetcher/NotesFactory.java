@@ -45,7 +45,7 @@ public class NotesFactory extends RestApi<Note> {
     }
 
     public void createIssueNotes(Issue issue, String projectPath, String projectId, String token) {
-        issue.getNoteList().forEach(note -> createPostRequest(note, RestQueryParam.builder().
+        issue.getNoteList().stream().filter(note -> !note.getSystem()).forEach(note -> createPostRequest(note, RestQueryParam.builder().
                 projectPath(projectPath).
                 projectId(projectId).
                 issueIid(issue.getIid().toString()).
@@ -56,11 +56,11 @@ public class NotesFactory extends RestApi<Note> {
 
     //Сначала удаляем старые комментарии потом создаем актуальные
     public void updateIssueNotes(Issue issue, Issue oldIssue, String projectPath, String projectId, String token) {
-        oldIssue.getNoteList().forEach(note ->
+        oldIssue.getNoteList().stream().filter(note -> !note.getSystem()).forEach(note ->
                 createDeleteRequest(RestQueryParam.builder().
                         projectPath(projectPath).
                         projectId(projectId).
-                        issueIid(issue.getIid().toString()).
+                        issueIid(oldIssue.getIid().toString()).
                         notesIid(note.getId().toString()).
                         token(token).
                         build()));
