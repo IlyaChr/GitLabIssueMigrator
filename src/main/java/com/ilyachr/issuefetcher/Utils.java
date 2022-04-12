@@ -28,6 +28,10 @@ public class Utils {
 
     public static final String PROPERTIES_FILE_NAME = "config.properties";
 
+    public static final String EXPORT_MODE = "export";
+
+    public static final String IMPORT_MODE = "import";
+
     private final Map<GitLabEnum, String> gitLabProperties = new EnumMap<>(GitLabEnum.class);
 
     @FunctionalInterface

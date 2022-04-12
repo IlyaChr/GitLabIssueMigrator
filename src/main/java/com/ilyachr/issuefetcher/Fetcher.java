@@ -22,20 +22,41 @@ public class Fetcher {
     private static Utils gitLabProperties;
 
     public static void main(String[] args) {
+        if (args.length == 1) {
+            autoStart(args);
+        } else {
+            manualStart();
+        }
+    }
 
+    private static void initConfig() {
+        try {
+            gitLabProperties = new Utils();
+            if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(SSL_DISABLE))) {
+                gitLabProperties.disableSslVerification();
+            }
+        } catch (IOException | URISyntaxException exception) {
+            log.error("Error in config file");
+            System.exit(-1);
+        }
+    }
+
+    private static void autoStart(String... args) {
+        initConfig();
+        if (Utils.EXPORT_MODE.equals(args[0])) {
+            issueExport();
+        } else if (Utils.IMPORT_MODE.equals(args[0])) {
+            issueImport();
+        } else {
+            manualStart();
+        }
+    }
+
+    private static void manualStart() {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-
-            try {
-                gitLabProperties = new Utils();
-                if ("TRUE".equalsIgnoreCase(gitLabProperties.getProperty(SSL_DISABLE))) {
-                    gitLabProperties.disableSslVerification();
-                }
-            } catch (IOException | URISyntaxException exception) {
-                log.error("Error in config file");
-                return;
-            }
+            initConfig();
 
             log.info(" ------------ GitLab Parameters ------------ ");
             for (Utils.GitLabEnum labEnum : Utils.GitLabEnum.values()) {
