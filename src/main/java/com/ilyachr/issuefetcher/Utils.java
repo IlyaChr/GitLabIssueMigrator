@@ -93,30 +93,30 @@ public class Utils {
             if (inputStream != null) {
                 properties.load(inputStream);
 
-                gitLabProperties.put(GitLabEnum.SSL_DISABLE, properties.getProperty(GitLabEnum.SSL_DISABLE.name()));
-                gitLabProperties.put(GitLabEnum.EPICS_ENABLE, properties.getProperty(GitLabEnum.EPICS_ENABLE.name()));
-                gitLabProperties.put(GitLabEnum.ISSUE_ENABLE, properties.getProperty(GitLabEnum.ISSUE_ENABLE.name()));
-                gitLabProperties.put(GitLabEnum.PARALLEL_MODE, properties.getProperty(GitLabEnum.PARALLEL_MODE.name()));
+                gitLabProperties.put(GitLabEnum.SSL_DISABLE,  properties.getProperty(GitLabEnum.SSL_DISABLE.name()).trim());
+                gitLabProperties.put(GitLabEnum.EPICS_ENABLE, properties.getProperty(GitLabEnum.EPICS_ENABLE.name()).trim());
+                gitLabProperties.put(GitLabEnum.ISSUE_ENABLE, properties.getProperty(GitLabEnum.ISSUE_ENABLE.name()).trim());
+                gitLabProperties.put(GitLabEnum.PARALLEL_MODE, properties.getProperty(GitLabEnum.PARALLEL_MODE.name()).trim());
 
 
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_TOKEN, properties.getProperty(GitLabEnum.GITLAB_FROM_TOKEN.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_ID, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_ID.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_PATH.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_GROUP_ID, properties.getProperty(GitLabEnum.GITLAB_FROM_GROUP_ID.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_PROJECT_NAME, properties.getProperty(GitLabEnum.GITLAB_PROJECT_NAME.name()));
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_TOKEN, properties.getProperty(GitLabEnum.GITLAB_FROM_TOKEN.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PATH.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_ID, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_ID.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PROJECT_PATH, properties.getProperty(GitLabEnum.GITLAB_FROM_PROJECT_PATH.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_GROUP_ID, properties.getProperty(GitLabEnum.GITLAB_FROM_GROUP_ID.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_PROJECT_NAME, properties.getProperty(GitLabEnum.GITLAB_PROJECT_NAME.name()).trim());
 
 
-                gitLabProperties.put(GitLabEnum.GITLAB_TO_TOKEN, properties.getProperty(GitLabEnum.GITLAB_TO_TOKEN.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_TO_PATH, properties.getProperty(GitLabEnum.GITLAB_TO_PATH.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_TO_PROJECT_ID, properties.getProperty(GitLabEnum.GITLAB_TO_PROJECT_ID.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_TO_PROJECT_PATH, properties.getProperty(GitLabEnum.GITLAB_TO_PROJECT_PATH.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_TO_GROUP_ID, properties.getProperty(GitLabEnum.GITLAB_TO_GROUP_ID.name()));
+                gitLabProperties.put(GitLabEnum.GITLAB_TO_TOKEN, properties.getProperty(GitLabEnum.GITLAB_TO_TOKEN.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_TO_PATH, properties.getProperty(GitLabEnum.GITLAB_TO_PATH.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_TO_PROJECT_ID, properties.getProperty(GitLabEnum.GITLAB_TO_PROJECT_ID.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_TO_PROJECT_PATH, properties.getProperty(GitLabEnum.GITLAB_TO_PROJECT_PATH.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_TO_GROUP_ID, properties.getProperty(GitLabEnum.GITLAB_TO_GROUP_ID.name()).trim());
 
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_LOGIN_FORM_URL, properties.getProperty(GitLabEnum.GITLAB_FROM_LOGIN_FORM_URL.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_LOGIN_ACTION_URL, properties.getProperty(GitLabEnum.GITLAB_FROM_LOGIN_ACTION_URL.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_USERNAME, properties.getProperty(GitLabEnum.GITLAB_FROM_USERNAME.name()));
-                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PASSWORD, properties.getProperty(GitLabEnum.GITLAB_FROM_PASSWORD.name()));
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_LOGIN_FORM_URL, properties.getProperty(GitLabEnum.GITLAB_FROM_LOGIN_FORM_URL.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_LOGIN_ACTION_URL, properties.getProperty(GitLabEnum.GITLAB_FROM_LOGIN_ACTION_URL.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_USERNAME, properties.getProperty(GitLabEnum.GITLAB_FROM_USERNAME.name()).trim());
+                gitLabProperties.put(GitLabEnum.GITLAB_FROM_PASSWORD, properties.getProperty(GitLabEnum.GITLAB_FROM_PASSWORD.name()).trim());
             }
 
         } catch (IOException exception) {
