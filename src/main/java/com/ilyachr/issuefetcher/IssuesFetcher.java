@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilyachr.issuefetcher.jackson.Issue;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -124,14 +125,21 @@ public class IssuesFetcher extends RestApi<Issue> {
         Document loginDoc = loginForm.parse();
 
         Elements element = loginDoc.select("#new_ldap_user > input[type=hidden]").isEmpty() ?
-                loginDoc.select("#new_user > input[type=hidden]:nth-child(2)") :
+                loginDoc.select("#new_user > input[type=hidden]") :
                 loginDoc.select("#new_ldap_user > input[type=hidden]");
 
         if (element.isEmpty()) {
             throw new AuthenticationException("Can not find login page");
         }
 
-        String authToken = element.first().attr("value");
+        String authToken = element.stream().
+                filter(e -> "authenticity_token".equals(e.attr("name"))).
+                map(e -> e.attr("value")).
+                findFirst().orElse(StringUtils.EMPTY);
+
+        if (authToken.isEmpty()) {
+            throw new AuthenticationException("Can not find authenticity_token");
+        }
 
         formData.put("utf8", "e2 9c 93");
         formData.put("authenticity_token", authToken);
