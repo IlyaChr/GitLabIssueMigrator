@@ -68,6 +68,8 @@ public class IssuesCreator extends RestApi<Issue> {
 
     private void createNewIssue(Issue issue, Map<String, Integer> usersIds, String projectPath, String projectId, String token) throws IOException {
 
+        log.debug("creating new issue : " + issue.getIid());
+
         //загружаем вложения и обновляем на них ссылки
         updateDescription(issue, projectPath, projectId, token);
 
@@ -99,6 +101,8 @@ public class IssuesCreator extends RestApi<Issue> {
         LocalDateTime oldIssueUpdatedTime = LocalDateTime.parse(oldIssue.getUpdated_at(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
         if (newIssueUpdatedTime.isAfter(oldIssueUpdatedTime)) {
+
+            log.debug("updating issue : " + issue.getIid());
 
             //загружаем вложения и обновляем на них ссылки
             updateDescription(issue, projectPath, projectId, token);

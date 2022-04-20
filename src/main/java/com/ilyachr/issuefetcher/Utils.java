@@ -50,7 +50,7 @@ public class Utils {
                     log.error(
                             "Exception occured : {} ", exCast.getMessage());
                 } catch (ClassCastException ccEx) {
-                    throw new RuntimeException(ex);
+                    log.error("Unexpected runtime exception : {}", ex.getMessage());
                 }
             }
         };
